@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Globe, MapPinned, PlusCircle, Image as ImageIcon } from "lucide-react";
 
 // Components
@@ -13,21 +13,29 @@ import FlashMessage from "./components/FlashMessage";
 import LoadingSpinner from "./components/LoadingSpinner";
 
 // Data
-import { 
-  initialTripsData, 
-  continentCountryMap, 
-  continentColors, 
-  countryFlags, 
-  months, 
-  years 
-} from "./data/tripData";
+import { initialTripsData, continentCountryMap, continentColors, countryFlags, months, years } from "./data/tripData";
 
 // Styles
 import "./styles/TravelJournal.css";
 
 function App() {
   const [allTrips, setAllTrips] = useState([]);
-  const [currentTripId, setCurrentTripId] = useState(null);
+  const [selectedTripId, setSelectedTripId] = useState(null);
+
+  // Derive a valid currentTripId from selectedTripId and allTrips
+  // This avoids calling setState inside useEffect
+  const currentTripId = useMemo(() => {
+    if (allTrips.length === 0) return null;
+    if (selectedTripId !== null && allTrips.find((trip) => trip.id === selectedTripId)) {
+      return selectedTripId;
+    }
+    return allTrips[0].id;
+  }, [allTrips, selectedTripId]);
+
+  // Wrapper to update selectedTripId (maintains same API for child components)
+  const setCurrentTripId = useCallback((id) => {
+    setSelectedTripId(id);
+  }, []);
   const [darkMode, setDarkMode] = useState(false);
   const [flashMessage, setFlashMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,17 +85,10 @@ function App() {
     loadData();
   }, []);
 
-  // Save trips to localStorage and manage currentTripId
+  // Save trips to localStorage
   useEffect(() => {
     localStorage.setItem("travelJournalTrips", JSON.stringify(allTrips));
-    if (allTrips.length > 0 && currentTripId === null) {
-      setCurrentTripId(allTrips[0].id);
-    } else if (allTrips.length > 0 && !allTrips.find((trip) => trip.id === currentTripId)) {
-      setCurrentTripId(allTrips[0].id);
-    } else if (allTrips.length === 0) {
-      setCurrentTripId(null);
-    }
-  }, [allTrips, currentTripId]);
+  }, [allTrips]);
 
   // Save dark mode preference and update body/html class for scrollbar theming
   useEffect(() => {
@@ -124,14 +125,14 @@ function App() {
     if (allTrips.length <= 1) return;
     const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
     const prevIndex = (currentIndex - 1 + allTrips.length) % allTrips.length;
-    setCurrentTripId(allTrips[prevIndex].id);
+    setSelectedTripId(allTrips[prevIndex].id);
   }, [allTrips, currentTripId]);
 
   const handleNextTrip = useCallback(() => {
     if (allTrips.length <= 1) return;
     const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
     const nextIndex = (currentIndex + 1) % allTrips.length;
-    setCurrentTripId(allTrips[nextIndex].id);
+    setSelectedTripId(allTrips[nextIndex].id);
   }, [allTrips, currentTripId]);
 
   const handleSaveTrip = (savedTrip) => {
@@ -147,10 +148,7 @@ function App() {
     setCurrentTripId(savedTrip.id);
     setIsTripFormModalOpen(false);
     setEditingTrip(null);
-    showFlashMessage(
-      isEditing ? "Trip updated successfully!" : "Trip added successfully!",
-      "success"
-    );
+    showFlashMessage(isEditing ? "Trip updated successfully!" : "Trip added successfully!", "success");
   };
 
   const openAddTripModal = () => {
@@ -178,10 +176,8 @@ function App() {
     }
     setTripToDeleteId(null);
     showFlashMessage(
-      deletedTrip
-        ? `"${deletedTrip.city}" trip deleted successfully!`
-        : "Trip deleted successfully!",
-      "success"
+      deletedTrip ? `"${deletedTrip.city}" trip deleted successfully!` : "Trip deleted successfully!",
+      "success",
     );
   };
 
@@ -210,10 +206,11 @@ function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-all duration-700 font-poppins ${darkMode
+      className={`min-h-screen flex flex-col transition-all duration-700 font-poppins ${
+        darkMode
           ? "bg-gradient-to-br from-gray-900 via-slate-900 to-black"
           : "bg-gradient-to-br from-slate-50 via-gray-100 to-stone-200"
-        }`}
+      }`}
     >
       {/* Background Blobs */}
       {darkMode ? (
@@ -231,10 +228,9 @@ function App() {
 
       {/* Header */}
       <header
-        className={`sticky top-0 py-5 px-6 md:px-8 backdrop-blur-xl border-b z-30 ${darkMode
-            ? "border-gray-700/60 bg-gray-900/70"
-            : "border-gray-200/60 bg-white/70"
-          } transition-all duration-500 shadow-sm`}
+        className={`sticky top-0 py-5 px-6 md:px-8 backdrop-blur-xl border-b z-30 ${
+          darkMode ? "border-gray-700/60 bg-gray-900/70" : "border-gray-200/60 bg-white/70"
+        } transition-all duration-500 shadow-sm`}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <button
@@ -246,32 +242,38 @@ function App() {
             aria-label="Reload Travel Journal"
           >
             <div
-              className={`p-2.5 mr-3 rounded-full ${darkMode
-                  ? "bg-sky-800/40 group-hover:bg-sky-700/60"
-                  : "bg-sky-100/90 group-hover:bg-sky-200/90"
-                } transition-all duration-300 transform group-hover:scale-110`}
+              className={`p-2.5 mr-3 rounded-full ${
+                darkMode ? "bg-sky-800/40 group-hover:bg-sky-700/60" : "bg-sky-100/90 group-hover:bg-sky-200/90"
+              } transition-all duration-300 transform group-hover:scale-110`}
             >
               <Globe
-                className={`h-7 w-7 ${darkMode ? "text-sky-300" : "text-sky-600"
-                  } transition-all duration-300 group-hover:rotate-[360deg]`}
+                className={`h-7 w-7 ${
+                  darkMode ? "text-sky-300" : "text-sky-600"
+                } transition-all duration-300 group-hover:rotate-[360deg]`}
               />
             </div>
             <h1
-              className={`text-3xl font-bold font-playfair ${darkMode ? "text-gray-100" : "text-gray-900"
-                } transition-colors duration-300 group-hover:text-sky-500`}
+              className={`text-3xl font-bold font-playfair ${
+                darkMode ? "text-gray-100" : "text-gray-900"
+              } transition-colors duration-300 group-hover:text-sky-500`}
             >
               Travel
-              <span className={`${darkMode ? "text-sky-400" : "text-sky-600"} group-hover:text-indigo-500 transition-colors duration-300`}>Journal</span>
+              <span
+                className={`${darkMode ? "text-sky-400" : "text-sky-600"} group-hover:text-indigo-500 transition-colors duration-300`}
+              >
+                Journal
+              </span>
             </h1>
           </button>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsDestinationsModalOpen(true)}
               aria-label="View all destinations"
-              className={`relative cursor-pointer px-4 py-2.5 rounded-full flex items-center space-x-2 shadow-md overflow-hidden ${darkMode
+              className={`relative cursor-pointer px-4 py-2.5 rounded-full flex items-center space-x-2 shadow-md overflow-hidden ${
+                darkMode
                   ? "bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white"
                   : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white"
-                } transition-all duration-300 transform hover:scale-105 hover:shadow-lg group text-sm font-medium`}
+              } transition-all duration-300 transform hover:scale-105 hover:shadow-lg group text-sm font-medium`}
             >
               <span className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all duration-500 opacity-50 group-hover:opacity-100"></span>
               <MapPinned className="h-5 w-5 z-10" />
@@ -280,10 +282,11 @@ function App() {
             <button
               onClick={openAddTripModal}
               aria-label="Add new trip"
-              className={`relative cursor-pointer px-4 py-2.5 rounded-full flex items-center space-x-2 shadow-md overflow-hidden ${darkMode
+              className={`relative cursor-pointer px-4 py-2.5 rounded-full flex items-center space-x-2 shadow-md overflow-hidden ${
+                darkMode
                   ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white"
                   : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
-                } transition-all duration-300 transform hover:scale-105 hover:shadow-lg group text-sm font-medium`}
+              } transition-all duration-300 transform hover:scale-105 hover:shadow-lg group text-sm font-medium`}
             >
               <span className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all duration-500 opacity-50 group-hover:opacity-100"></span>
               <PlusCircle className="h-5 w-5 z-10" />
@@ -313,19 +316,14 @@ function App() {
             </div>
           ) : (
             <div
-              className={`p-8 md:p-12 rounded-3xl shadow-xl text-center ${darkMode
+              className={`p-8 md:p-12 rounded-3xl shadow-xl text-center ${
+                darkMode
                   ? "bg-gray-800/70 text-gray-300 border-gray-700/50"
                   : "bg-white/80 text-gray-700 border-gray-200/50"
-                } backdrop-blur-xl border animate-fadeIn`}
+              } backdrop-blur-xl border animate-fadeIn`}
             >
-              <ImageIcon
-                className={`h-16 w-16 mx-auto mb-6 ${darkMode ? "text-sky-500" : "text-sky-600"
-                  }`}
-              />
-              <h2
-                className={`text-3xl font-bold font-playfair mb-4 ${darkMode ? "text-gray-100" : "text-gray-800"
-                  }`}
-              >
+              <ImageIcon className={`h-16 w-16 mx-auto mb-6 ${darkMode ? "text-sky-500" : "text-sky-600"}`} />
+              <h2 className={`text-3xl font-bold font-playfair mb-4 ${darkMode ? "text-gray-100" : "text-gray-800"}`}>
                 Your Adventure Awaits!
               </h2>
               <p className="text-lg mb-8 leading-relaxed">
@@ -335,10 +333,11 @@ function App() {
               </p>
               <button
                 onClick={openAddTripModal}
-                className={`cursor-pointer px-6 py-3 rounded-full font-semibold flex items-center justify-center mx-auto space-x-2 shadow-lg ${darkMode
+                className={`cursor-pointer px-6 py-3 rounded-full font-semibold flex items-center justify-center mx-auto space-x-2 shadow-lg ${
+                  darkMode
                     ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white"
                     : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
-                  } transition-all duration-300 transform hover:scale-105 hover:shadow-xl group`}
+                } transition-all duration-300 transform hover:scale-105 hover:shadow-xl group`}
               >
                 <PlusCircle className="h-5 w-5" />
                 <span>Add Your First Trip</span>
@@ -413,4 +412,3 @@ function App() {
 }
 
 export default App;
-
