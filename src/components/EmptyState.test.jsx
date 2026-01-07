@@ -38,12 +38,7 @@ describe("EmptyState", () => {
     });
 
     it("renders with both custom title and description", () => {
-      render(
-        <EmptyState
-          title="Empty Wishlist"
-          description="Add destinations you'd like to visit."
-        />
-      );
+      render(<EmptyState title="Empty Wishlist" description="Add destinations you'd like to visit." />);
       expect(screen.getByText("Empty Wishlist")).toBeInTheDocument();
       expect(screen.getByText("Add destinations you'd like to visit.")).toBeInTheDocument();
     });
@@ -241,7 +236,7 @@ describe("EmptyState", () => {
     });
 
     it("renders Plus icon in action button", () => {
-      const { container } = render(<EmptyState actionLabel="Add" onAction={() => {}} />);
+      render(<EmptyState actionLabel="Add" onAction={() => {}} />);
       const button = screen.getByRole("button");
       const svg = button.querySelector("svg");
       expect(svg).toBeInTheDocument();
@@ -364,7 +359,7 @@ describe("EmptyState", () => {
           onAction={handleAction}
           variant="card"
           className="extra-class"
-        />
+        />,
       );
 
       expect(screen.getByText("Custom Title")).toBeInTheDocument();
@@ -411,9 +406,7 @@ describe("NoResultsState", () => {
   describe("with query prop", () => {
     it("displays query in description", () => {
       render(<NoResultsState query="Rome" />);
-      expect(
-        screen.getByText(/We couldn't find anything matching "Rome"/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/We couldn't find anything matching "Rome"/)).toBeInTheDocument();
     });
 
     it("shows clear search button when query is provided", () => {
@@ -465,7 +458,7 @@ describe("NoResultsState", () => {
     it("handles special characters in query", () => {
       render(<NoResultsState query="<script>alert('xss')</script>" />);
       expect(
-        screen.getByText(/We couldn't find anything matching "<script>alert\('xss'\)<\/script>"/)
+        screen.getByText(/We couldn't find anything matching "<script>alert\('xss'\)<\/script>"/),
       ).toBeInTheDocument();
     });
 
@@ -494,9 +487,7 @@ describe("NoTripsState", () => {
 
     it("displays correct description", () => {
       render(<NoTripsState />);
-      expect(
-        screen.getByText("Start documenting your travel memories by adding your first trip.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Start documenting your travel memories by adding your first trip.")).toBeInTheDocument();
     });
 
     it("uses plane icon", () => {
@@ -562,11 +553,7 @@ describe("NoTripsState", () => {
     it("renders with all props", () => {
       const handleAddTrip = vi.fn();
       const { container } = render(
-        <NoTripsState
-          darkMode={true}
-          onAddTrip={handleAddTrip}
-          className="combined-class"
-        />
+        <NoTripsState darkMode={true} onAddTrip={handleAddTrip} className="combined-class" />,
       );
 
       expect(screen.getByText("No adventures yet!")).toBeInTheDocument();
@@ -611,7 +598,7 @@ describe("real-world usage scenarios", () => {
         darkMode={true}
         actionLabel="Add Destination"
         onAction={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText("No destinations added")).toBeInTheDocument();
@@ -626,7 +613,7 @@ describe("real-world usage scenarios", () => {
         icon="globe"
         actionLabel="Explore Destinations"
         onAction={() => {}}
-      />
+      />,
     );
 
     expect(screen.getByText("Your wishlist is empty")).toBeInTheDocument();

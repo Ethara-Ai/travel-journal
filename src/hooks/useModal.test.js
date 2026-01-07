@@ -3,7 +3,7 @@
  * Tests modal state management, open/close functionality, and scroll lock behavior
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import useModal, { useModalManager } from "./useModal";
 
@@ -524,11 +524,7 @@ describe("useModalManager", () => {
     it("each modal has all expected methods", () => {
       const { result } = renderHook(() => useModalManager());
 
-      const modals = [
-        result.current.destinationsModal,
-        result.current.tripFormModal,
-        result.current.confirmationModal,
-      ];
+      const modals = [result.current.destinationsModal, result.current.tripFormModal, result.current.confirmationModal];
 
       modals.forEach((modal) => {
         expect(typeof modal.open).toBe("function");

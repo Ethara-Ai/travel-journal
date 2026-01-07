@@ -1,69 +1,89 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { initialTripsData } from "../data/tripData";
 
 /**
  * useTrips - Custom hook for managing trip state and CRUD operations
- * Handles localStorage persistence automatically
- * 
+ * Handles localStorage persistence automatically with proper error handling
+ *
  * @returns {object} Trip state and operations
  */
 const useTrips = () => {
   const [allTrips, setAllTrips] = useState([]);
-  const [currentTripId, setCurrentTripId] = useState(null);
+  const [selectedTripId, setSelectedTripId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Derive currentTripId from selectedTripId and allTrips
+  // This avoids calling setState inside useEffect
+  const currentTripId = useMemo(() => {
+    if (allTrips.length === 0) return null;
+    if (selectedTripId !== null && allTrips.find((trip) => trip.id === selectedTripId)) {
+      return selectedTripId;
+    }
+    return allTrips[0].id;
+  }, [allTrips, selectedTripId]);
 
   // Load trips from localStorage on mount
   useEffect(() => {
-    const loadTrips = async () => {
-      // Simulate minimum loading time for smooth UX
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    const loadTrips = () => {
+      try {
+        const storedTrips = localStorage.getItem("travelJournalTrips");
 
-      const storedTrips = localStorage.getItem("travelJournalTrips");
+        if (storedTrips) {
+          const parsedTrips = JSON.parse(storedTrips);
 
-      if (storedTrips) {
-        const parsedTrips = JSON.parse(storedTrips);
-        if (parsedTrips.length === 0) {
-          setAllTrips(initialTripsData);
+          // Validate that parsedTrips is an array
+          if (!Array.isArray(parsedTrips)) {
+            console.error("Stored trips is not an array, loading initial data");
+            setAllTrips(initialTripsData);
+          } else if (parsedTrips.length === 0) {
+            // Load initial data if localStorage has empty array
+            setAllTrips(initialTripsData);
+          } else {
+            setAllTrips(parsedTrips);
+          }
         } else {
-          setAllTrips(parsedTrips);
+          setAllTrips(initialTripsData);
         }
-      } else {
+      } catch (error) {
+        console.error("Failed to parse trips from localStorage:", error);
+        // Fall back to initial data on error
         setAllTrips(initialTripsData);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
 
     loadTrips();
   }, []);
 
-  // Save trips to localStorage and manage currentTripId
+  // Save trips to localStorage whenever they change
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("travelJournalTrips", JSON.stringify(allTrips));
+    if (!isLoading && allTrips.length >= 0) {
+      try {
+        localStorage.setItem("travelJournalTrips", JSON.stringify(allTrips));
+      } catch (error) {
+        console.error("Failed to save trips to localStorage:", error);
+        // Could be quota exceeded - notify user in production
+      }
     }
-
-    if (allTrips.length > 0 && currentTripId === null) {
-      setCurrentTripId(allTrips[0].id);
-    } else if (allTrips.length > 0 && !allTrips.find((trip) => trip.id === currentTripId)) {
-      setCurrentTripId(allTrips[0].id);
-    } else if (allTrips.length === 0) {
-      setCurrentTripId(null);
-    }
-  }, [allTrips, currentTripId, isLoading]);
+  }, [allTrips, isLoading]);
 
   // Get current trip
-  const currentTrip = allTrips.find((trip) => trip.id === currentTripId);
+  const currentTrip = useMemo(() => {
+    return allTrips.find((trip) => trip.id === currentTripId);
+  }, [allTrips, currentTripId]);
 
   // Get current trip index
-  const currentTripIndex = allTrips.findIndex((t) => t.id === currentTripId);
+  const currentTripIndex = useMemo(() => {
+    return allTrips.findIndex((t) => t.id === currentTripId);
+  }, [allTrips, currentTripId]);
 
   // Navigate to previous trip
   const goToPrevTrip = useCallback(() => {
     if (allTrips.length <= 1) return;
     const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
     const prevIndex = (currentIndex - 1 + allTrips.length) % allTrips.length;
-    setCurrentTripId(allTrips[prevIndex].id);
+    setSelectedTripId(allTrips[prevIndex].id);
   }, [allTrips, currentTripId]);
 
   // Navigate to next trip
@@ -71,7 +91,7 @@ const useTrips = () => {
     if (allTrips.length <= 1) return;
     const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
     const nextIndex = (currentIndex + 1) % allTrips.length;
-    setCurrentTripId(allTrips[nextIndex].id);
+    setSelectedTripId(allTrips[nextIndex].id);
   }, [allTrips, currentTripId]);
 
   // Get next available trip ID
@@ -80,45 +100,55 @@ const useTrips = () => {
   }, [allTrips]);
 
   // Add or update a trip
-  const saveTrip = useCallback((tripData) => {
-    const existingIndex = allTrips.findIndex((t) => t.id === tripData.id);
-    const isEditing = existingIndex > -1;
+  const saveTrip = useCallback(
+    (tripData) => {
+      const existingIndex = allTrips.findIndex((t) => t.id === tripData.id);
+      const isEditing = existingIndex > -1;
 
-    let updatedTrips;
-    if (isEditing) {
-      updatedTrips = allTrips.map((t) => (t.id === tripData.id ? tripData : t));
-    } else {
-      updatedTrips = [...allTrips, tripData];
-    }
+      let updatedTrips;
+      if (isEditing) {
+        updatedTrips = allTrips.map((t) => (t.id === tripData.id ? tripData : t));
+      } else {
+        updatedTrips = [...allTrips, tripData];
+      }
 
-    setAllTrips(updatedTrips);
-    setCurrentTripId(tripData.id);
+      setAllTrips(updatedTrips);
+      setSelectedTripId(tripData.id);
 
-    return isEditing;
-  }, [allTrips]);
+      return isEditing;
+    },
+    [allTrips],
+  );
 
   // Delete a trip
-  const deleteTrip = useCallback((tripId) => {
-    const deletedTrip = allTrips.find((trip) => trip.id === tripId);
-    const updatedTrips = allTrips.filter((trip) => trip.id !== tripId);
-    setAllTrips(updatedTrips);
+  const deleteTrip = useCallback(
+    (tripId) => {
+      const deletedTrip = allTrips.find((trip) => trip.id === tripId);
+      const updatedTrips = allTrips.filter((trip) => trip.id !== tripId);
+      setAllTrips(updatedTrips);
 
-    if (currentTripId === tripId) {
-      setCurrentTripId(updatedTrips.length > 0 ? updatedTrips[0].id : null);
-    }
+      // If we deleted the current trip, reset selection
+      if (currentTripId === tripId) {
+        setSelectedTripId(updatedTrips.length > 0 ? updatedTrips[0].id : null);
+      }
 
-    return deletedTrip;
-  }, [allTrips, currentTripId]);
+      return deletedTrip;
+    },
+    [allTrips, currentTripId],
+  );
 
   // Select a specific trip
   const selectTrip = useCallback((tripId) => {
-    setCurrentTripId(tripId);
+    setSelectedTripId(tripId);
   }, []);
 
   // Get a trip by ID
-  const getTripById = useCallback((tripId) => {
-    return allTrips.find((trip) => trip.id === tripId);
-  }, [allTrips]);
+  const getTripById = useCallback(
+    (tripId) => {
+      return allTrips.find((trip) => trip.id === tripId);
+    },
+    [allTrips],
+  );
 
   return {
     // State
@@ -141,4 +171,3 @@ const useTrips = () => {
 };
 
 export default useTrips;
-

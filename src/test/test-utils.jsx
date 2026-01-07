@@ -14,8 +14,9 @@ import { vi } from "vitest";
  * @param {Object} renderOptions - Additional render options
  * @returns {Object} Render result with custom utilities
  */
-const customRender = (ui, { providerProps = {}, ...renderOptions } = {}) => {
+const customRender = (ui, { ...renderOptions } = {}) => {
   // Wrapper component for providers (can be extended with context providers)
+  // Note: Add providerProps parameter when implementing context providers
   const Wrapper = ({ children }) => {
     return children;
   };
@@ -39,10 +40,7 @@ export const createMockTrip = (overrides = {}) => ({
   date: "May 2023",
   rating: 5,
   description: "A historic city with ancient ruins, stunning art, and delicious cuisine.",
-  highlights: [
-    "Visited the Colosseum and Roman Forum",
-    "Tossed a coin in the Trevi Fountain",
-  ],
+  highlights: ["Visited the Colosseum and Roman Forum", "Tossed a coin in the Trevi Fountain"],
   lowlights: ["Can be very crowded"],
   image: "https://example.com/rome.jpg",
   imageAlt: "The Colosseum in Rome",

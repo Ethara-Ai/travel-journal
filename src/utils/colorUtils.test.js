@@ -4,14 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  hexToRgba,
-  hexToRgb,
-  isLightColor,
-  getContrastColor,
-  lightenColor,
-  darkenColor,
-} from "./colorUtils";
+import { hexToRgba, hexToRgb, isLightColor, getContrastColor, lightenColor, darkenColor } from "./colorUtils";
 
 describe("colorUtils", () => {
   // ============================================
@@ -280,8 +273,8 @@ describe("colorUtils", () => {
 
     describe("handles edge cases", () => {
       it("handles medium gray (luminance around 0.5)", () => {
-        // #808080 has luminance of exactly 0.5, should be false (not > 0.5)
-        expect(isLightColor("#808080")).toBe(false);
+        // #808080 (128,128,128) has luminance of ~0.502, which is > 0.5, so it's light
+        expect(isLightColor("#808080")).toBe(true);
       });
 
       it("handles pure red (medium luminance)", () => {
@@ -380,7 +373,8 @@ describe("colorUtils", () => {
     describe("lightens colors by percentage", () => {
       it("lightens black by 10%", () => {
         const result = lightenColor("#000000", 10);
-        expect(result).toBe("#191919");
+        // amount = Math.round(2.55 * 10) = 26 = 0x1a
+        expect(result).toBe("#1a1a1a");
       });
 
       it("lightens black by 50%", () => {
@@ -433,10 +427,11 @@ describe("colorUtils", () => {
 
       it("lightens shorthand color", () => {
         const result = lightenColor("#abc", 10);
-        // aa (170) + 25 = 195 = c3
-        // bb (187) + 25 = 212 = d4
-        // cc (204) + 25 = 229 = e5
-        expect(result).toBe("#c3d4e5");
+        // amount = Math.round(2.55 * 10) = 26
+        // aa (170) + 26 = 196 = c4
+        // bb (187) + 26 = 213 = d5
+        // cc (204) + 26 = 230 = e6
+        expect(result).toBe("#c4d5e6");
       });
     });
   });
@@ -448,8 +443,8 @@ describe("colorUtils", () => {
     describe("darkens colors by percentage", () => {
       it("darkens white by 10%", () => {
         const result = darkenColor("#ffffff", 10);
-        // 255 - 25 = 230 = e6
-        expect(result).toBe("#e6e6e6");
+        // amount = Math.round(2.55 * 10) = 26, 255 - 26 = 229 = e5
+        expect(result).toBe("#e5e5e5");
       });
 
       it("darkens white by 50%", () => {
@@ -507,10 +502,11 @@ describe("colorUtils", () => {
 
       it("darkens shorthand color", () => {
         const result = darkenColor("#abc", 10);
-        // aa (170) - 25 = 145 = 91
-        // bb (187) - 25 = 162 = a2
-        // cc (204) - 25 = 179 = b3
-        expect(result).toBe("#91a2b3");
+        // amount = Math.round(2.55 * 10) = 26
+        // aa (170) - 26 = 144 = 90
+        // bb (187) - 26 = 161 = a1
+        // cc (204) - 26 = 178 = b2
+        expect(result).toBe("#90a1b2");
       });
     });
   });

@@ -3,8 +3,8 @@
  * Tests trip state management, CRUD operations, navigation, and localStorage persistence
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
 import useTrips from "./useTrips";
 
 // Mock the initial trips data
@@ -55,37 +55,28 @@ describe("useTrips", () => {
     window.localStorage.store = {};
     window.localStorage.getItem.mockClear();
     window.localStorage.setItem.mockClear();
-    vi.useFakeTimers();
   });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  // Helper to advance timers past the loading delay
-  const advancePastLoading = async () => {
-    await act(async () => {
-      vi.advanceTimersByTime(1100);
-    });
-  };
 
   // ============================================
   // Initial State Tests
   // ============================================
   describe("initial state", () => {
-    it("starts with loading state as true", () => {
+    it("loads data synchronously", () => {
       const { result } = renderHook(() => useTrips());
-      expect(result.current.isLoading).toBe(true);
+      // Data loads synchronously now (no artificial delay)
+      expect(result.current.isLoading).toBe(false);
     });
 
-    it("starts with empty trips array during loading", () => {
+    it("has trips array populated after initialization", () => {
       const { result } = renderHook(() => useTrips());
-      expect(result.current.allTrips).toEqual([]);
+      // Since loading is synchronous, trips are populated immediately
+      expect(result.current.allTrips.length).toBeGreaterThan(0);
     });
 
-    it("starts with null currentTripId during loading", () => {
+    it("has currentTripId set after initialization", () => {
       const { result } = renderHook(() => useTrips());
-      expect(result.current.currentTripId).toBeNull();
+      // Since loading is synchronous, currentTripId is set immediately
+      expect(result.current.currentTripId).toBe(1);
     });
 
     it("provides all expected properties and methods", () => {
@@ -114,26 +105,20 @@ describe("useTrips", () => {
   // Loading State Tests
   // ============================================
   describe("loading state", () => {
-    it("sets loading to false after timeout", async () => {
+    it("sets loading to false after initialization", () => {
       const { result } = renderHook(() => useTrips());
-
-      expect(result.current.isLoading).toBe(true);
-
-      await advancePastLoading();
-
+      // Loading completes synchronously
       expect(result.current.isLoading).toBe(false);
     });
 
-    it("loads initial trips data when localStorage is empty", async () => {
+    it("loads initial trips data when localStorage is empty", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
-
+      // Data loads synchronously
       expect(result.current.allTrips.length).toBe(2);
       expect(result.current.allTrips[0].city).toBe("Rome");
     });
 
-    it("loads trips from localStorage when available", async () => {
+    it("loads trips from localStorage when available", () => {
       const storedTrips = [
         { id: 100, city: "Paris", country: "France", continent: "Europe", rating: 4, isWishlist: false },
       ];
@@ -141,26 +126,20 @@ describe("useTrips", () => {
 
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
       expect(result.current.allTrips.length).toBe(1);
       expect(result.current.allTrips[0].city).toBe("Paris");
     });
 
-    it("loads initial data when localStorage has empty array", async () => {
+    it("loads initial data when localStorage has empty array", () => {
       window.localStorage.store["travelJournalTrips"] = JSON.stringify([]);
 
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
       expect(result.current.allTrips.length).toBe(2);
     });
 
-    it("sets currentTripId to first trip after loading", async () => {
+    it("sets currentTripId to first trip after loading", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTripId).toBe(1);
     });
@@ -170,37 +149,32 @@ describe("useTrips", () => {
   // currentTrip Tests
   // ============================================
   describe("currentTrip", () => {
-    it("returns the current trip object", async () => {
+    it("returns the current trip object", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTrip).toBeDefined();
       expect(result.current.currentTrip.id).toBe(1);
       expect(result.current.currentTrip.city).toBe("Rome");
     });
 
-    it("returns undefined when no trips exist", async () => {
-      window.localStorage.store["travelJournalTrips"] = JSON.stringify([]);
-
-      // Need to mock initialTripsData to be empty for this test
+    it("returns undefined when no trips exist", () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
-      // Since we can't easily override the mock, test with delete instead
+      // Delete all trips to test empty state
       act(() => {
         result.current.deleteTrip(1);
+      });
+      act(() => {
         result.current.deleteTrip(2);
       });
 
+      // When all trips are deleted, currentTrip should be undefined
+      expect(result.current.allTrips.length).toBe(0);
       expect(result.current.currentTrip).toBeUndefined();
     });
 
-    it("updates when currentTripId changes", async () => {
+    it("updates when trip is selected", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTrip.id).toBe(1);
 
@@ -217,10 +191,8 @@ describe("useTrips", () => {
   // currentTripIndex Tests
   // ============================================
   describe("currentTripIndex", () => {
-    it("returns correct index of current trip", async () => {
+    it("returns correct index of current trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTripIndex).toBe(0);
 
@@ -231,16 +203,19 @@ describe("useTrips", () => {
       expect(result.current.currentTripIndex).toBe(1);
     });
 
-    it("returns -1 when trip not found", async () => {
+    it("returns -1 when no trips exist", () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
+      // Delete all trips one by one
       act(() => {
         result.current.deleteTrip(1);
+      });
+      act(() => {
         result.current.deleteTrip(2);
       });
 
+      // When all trips are deleted, index should be -1
+      expect(result.current.allTrips.length).toBe(0);
       expect(result.current.currentTripIndex).toBe(-1);
     });
   });
@@ -249,18 +224,14 @@ describe("useTrips", () => {
   // totalTrips Tests
   // ============================================
   describe("totalTrips", () => {
-    it("returns correct count of trips", async () => {
+    it("returns correct count of trips", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.totalTrips).toBe(2);
     });
 
-    it("updates when trips are added", async () => {
+    it("updates when trips are added", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.totalTrips).toBe(2);
 
@@ -271,16 +242,15 @@ describe("useTrips", () => {
           country: "France",
           continent: "Europe",
           rating: 5,
+          isWishlist: false,
         });
       });
 
       expect(result.current.totalTrips).toBe(3);
     });
 
-    it("updates when trips are deleted", async () => {
+    it("updates when trips are deleted", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.deleteTrip(1);
@@ -294,10 +264,8 @@ describe("useTrips", () => {
   // selectTrip Tests
   // ============================================
   describe("selectTrip", () => {
-    it("selects a trip by id", async () => {
+    it("selects a trip by id", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.selectTrip(2);
@@ -306,10 +274,8 @@ describe("useTrips", () => {
       expect(result.current.currentTripId).toBe(2);
     });
 
-    it("updates currentTrip when selecting", async () => {
+    it("updates currentTrip when selecting", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.selectTrip(2);
@@ -318,12 +284,11 @@ describe("useTrips", () => {
       expect(result.current.currentTrip.city).toBe("Tokyo");
     });
 
-    it("can select same trip multiple times", async () => {
+    it("can select same trip multiple times", () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
       act(() => {
+        result.current.selectTrip(1);
         result.current.selectTrip(1);
         result.current.selectTrip(1);
       });
@@ -336,10 +301,8 @@ describe("useTrips", () => {
   // goToNextTrip Tests
   // ============================================
   describe("goToNextTrip", () => {
-    it("navigates to next trip", async () => {
+    it("navigates to next trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTripId).toBe(1);
 
@@ -350,14 +313,13 @@ describe("useTrips", () => {
       expect(result.current.currentTripId).toBe(2);
     });
 
-    it("wraps around to first trip from last", async () => {
+    it("wraps around to first trip from last", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.selectTrip(2);
       });
+
       expect(result.current.currentTripId).toBe(2);
 
       act(() => {
@@ -367,10 +329,8 @@ describe("useTrips", () => {
       expect(result.current.currentTripId).toBe(1);
     });
 
-    it("does nothing with single trip", async () => {
+    it("does nothing with single trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.deleteTrip(2);
@@ -378,11 +338,13 @@ describe("useTrips", () => {
 
       expect(result.current.totalTrips).toBe(1);
 
+      const currentId = result.current.currentTripId;
+
       act(() => {
         result.current.goToNextTrip();
       });
 
-      expect(result.current.currentTripId).toBe(1);
+      expect(result.current.currentTripId).toBe(currentId);
     });
   });
 
@@ -390,14 +352,13 @@ describe("useTrips", () => {
   // goToPrevTrip Tests
   // ============================================
   describe("goToPrevTrip", () => {
-    it("navigates to previous trip", async () => {
+    it("navigates to previous trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.selectTrip(2);
       });
+
       expect(result.current.currentTripId).toBe(2);
 
       act(() => {
@@ -407,10 +368,8 @@ describe("useTrips", () => {
       expect(result.current.currentTripId).toBe(1);
     });
 
-    it("wraps around to last trip from first", async () => {
+    it("wraps around to last trip from first", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.currentTripId).toBe(1);
 
@@ -421,20 +380,20 @@ describe("useTrips", () => {
       expect(result.current.currentTripId).toBe(2);
     });
 
-    it("does nothing with single trip", async () => {
+    it("does nothing with single trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.deleteTrip(2);
       });
 
+      const currentId = result.current.currentTripId;
+
       act(() => {
         result.current.goToPrevTrip();
       });
 
-      expect(result.current.currentTripId).toBe(1);
+      expect(result.current.currentTripId).toBe(currentId);
     });
   });
 
@@ -442,32 +401,28 @@ describe("useTrips", () => {
   // saveTrip Tests
   // ============================================
   describe("saveTrip", () => {
-    it("adds new trip to allTrips", async () => {
+    it("adds new trip to allTrips", () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
-
-      const newTrip = {
-        id: 3,
-        city: "Paris",
-        country: "France",
-        continent: "Europe",
-        rating: 5,
-        isWishlist: false,
-      };
+      expect(result.current.allTrips.length).toBe(2);
 
       act(() => {
-        result.current.saveTrip(newTrip);
+        result.current.saveTrip({
+          id: 3,
+          city: "Paris",
+          country: "France",
+          continent: "Europe",
+          rating: 5,
+          isWishlist: false,
+        });
       });
 
       expect(result.current.allTrips.length).toBe(3);
       expect(result.current.allTrips[2].city).toBe("Paris");
     });
 
-    it("returns false when adding new trip", async () => {
+    it("returns false when adding new trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       let isEditing;
       act(() => {
@@ -483,7 +438,7 @@ describe("useTrips", () => {
     it("updates existing trip when id matches", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const updatedTrip = {
         id: 1,
@@ -505,7 +460,7 @@ describe("useTrips", () => {
     it("returns true when editing existing trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       let isEditing;
       act(() => {
@@ -521,7 +476,7 @@ describe("useTrips", () => {
     it("sets currentTripId to saved trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.saveTrip({
@@ -536,7 +491,10 @@ describe("useTrips", () => {
     it("saves trips to localStorage", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
+
+      // Clear previous calls from loading
+      window.localStorage.setItem.mockClear();
 
       act(() => {
         result.current.saveTrip({
@@ -545,9 +503,9 @@ describe("useTrips", () => {
         });
       });
 
-      // Need to advance timers for useEffect to run
+      // Wait for effects to run
       await act(async () => {
-        vi.advanceTimersByTime(0);
+        await Promise.resolve();
       });
 
       expect(window.localStorage.setItem).toHaveBeenCalledWith("travelJournalTrips", expect.any(String));
@@ -558,10 +516,8 @@ describe("useTrips", () => {
   // deleteTrip Tests
   // ============================================
   describe("deleteTrip", () => {
-    it("removes trip from allTrips", async () => {
+    it("removes trip from allTrips", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       expect(result.current.allTrips.length).toBe(2);
 
@@ -570,27 +526,25 @@ describe("useTrips", () => {
       });
 
       expect(result.current.allTrips.length).toBe(1);
-      expect(result.current.allTrips.find((t) => t.id === 1)).toBeUndefined();
+      expect(result.current.allTrips[0].city).toBe("Tokyo");
     });
 
-    it("returns the deleted trip", async () => {
+    it("returns the deleted trip", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       let deletedTrip;
       act(() => {
         deletedTrip = result.current.deleteTrip(1);
       });
 
-      expect(deletedTrip.id).toBe(1);
+      expect(deletedTrip).toBeDefined();
       expect(deletedTrip.city).toBe("Rome");
     });
 
     it("updates currentTripId when deleting current trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       expect(result.current.currentTripId).toBe(1);
 
@@ -605,7 +559,7 @@ describe("useTrips", () => {
     it("sets currentTripId to null when deleting last trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.deleteTrip(1);
@@ -623,7 +577,7 @@ describe("useTrips", () => {
     it("does not change currentTripId when deleting non-current trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       expect(result.current.currentTripId).toBe(1);
 
@@ -637,7 +591,7 @@ describe("useTrips", () => {
     it("handles deleting non-existent trip", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       let deletedTrip;
       act(() => {
@@ -653,46 +607,36 @@ describe("useTrips", () => {
   // getNextTripId Tests
   // ============================================
   describe("getNextTripId", () => {
-    it("returns max id + 1", async () => {
+    it("returns next sequential id", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       const nextId = result.current.getNextTripId();
       expect(nextId).toBe(3);
     });
 
-    it("returns correct next id after deletions", async () => {
+    it("returns 1 when no trips exist", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.deleteTrip(1);
       });
-
       act(() => {
         result.current.deleteTrip(2);
       });
 
-      // After deleting all trips, next ID depends on implementation
-      // With empty array, Math.max(...[]) returns -Infinity, so nextId would be 1
-      // But the test may run before state fully updates
       const nextId = result.current.getNextTripId();
-      expect(typeof nextId).toBe("number");
+      expect(nextId).toBe(1);
     });
 
-    it("accounts for non-sequential ids", async () => {
+    it("accounts for non-sequential ids", () => {
       const storedTrips = [
-        { id: 5, city: "City1" },
-        { id: 10, city: "City2" },
-        { id: 3, city: "City3" },
+        { id: 1, city: "Rome", country: "Italy", continent: "Europe", rating: 5, isWishlist: false },
+        { id: 5, city: "Paris", country: "France", continent: "Europe", rating: 4, isWishlist: false },
+        { id: 10, city: "Tokyo", country: "Japan", continent: "Asia", rating: 5, isWishlist: false },
       ];
       window.localStorage.store["travelJournalTrips"] = JSON.stringify(storedTrips);
 
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       const nextId = result.current.getNextTripId();
       expect(nextId).toBe(11);
@@ -703,35 +647,28 @@ describe("useTrips", () => {
   // getTripById Tests
   // ============================================
   describe("getTripById", () => {
-    it("returns trip with matching id", async () => {
+    it("returns trip with matching id", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       const trip = result.current.getTripById(1);
       expect(trip).toBeDefined();
       expect(trip.city).toBe("Rome");
     });
 
-    it("returns undefined for non-existent id", async () => {
+    it("returns undefined for non-existent id", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       const trip = result.current.getTripById(999);
       expect(trip).toBeUndefined();
     });
 
-    it("returns correct trip after modifications", async () => {
+    it("returns correct trip after modifications", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       act(() => {
         result.current.saveTrip({
           id: 1,
           city: "Modified Rome",
-          country: "Italy",
         });
       });
 
@@ -744,10 +681,8 @@ describe("useTrips", () => {
   // localStorage Persistence Tests
   // ============================================
   describe("localStorage persistence", () => {
-    it("saves trips to localStorage after modifications", async () => {
+    it("saves trips to localStorage after changes", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       // Clear previous calls
       window.localStorage.setItem.mockClear();
@@ -759,18 +694,11 @@ describe("useTrips", () => {
         });
       });
 
-      // Allow effect to run
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
       expect(window.localStorage.setItem).toHaveBeenCalled();
     });
 
-    it("saves correct JSON structure", async () => {
+    it("saves correct JSON structure", () => {
       const { result } = renderHook(() => useTrips());
-
-      await advancePastLoading();
 
       window.localStorage.setItem.mockClear();
 
@@ -780,10 +708,6 @@ describe("useTrips", () => {
           city: "Paris",
           country: "France",
         });
-      });
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
       });
 
       const savedData = JSON.parse(
@@ -801,7 +725,7 @@ describe("useTrips", () => {
     it("goToPrevTrip maintains stable reference", async () => {
       const { result, rerender } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const firstRef = result.current.goToPrevTrip;
       rerender();
@@ -811,7 +735,7 @@ describe("useTrips", () => {
     it("goToNextTrip maintains stable reference", async () => {
       const { result, rerender } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const firstRef = result.current.goToNextTrip;
       rerender();
@@ -821,7 +745,7 @@ describe("useTrips", () => {
     it("selectTrip maintains stable reference", async () => {
       const { result, rerender } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const firstRef = result.current.selectTrip;
       rerender();
@@ -849,7 +773,7 @@ describe("useTrips", () => {
     it("handles rapid navigation", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.goToNextTrip();
@@ -865,7 +789,7 @@ describe("useTrips", () => {
     it("handles saving trip with same id twice", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.saveTrip({ id: 10, city: "First" });
@@ -880,7 +804,7 @@ describe("useTrips", () => {
     it("handles deleting and re-adding trip with same id", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.deleteTrip(1);
@@ -904,7 +828,7 @@ describe("useTrips", () => {
     it("handles typical add trip flow", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const newTripId = result.current.getNextTripId();
       const newTrip = {
@@ -929,7 +853,7 @@ describe("useTrips", () => {
     it("handles typical edit trip flow", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       const tripToEdit = result.current.getTripById(1);
       const updatedTrip = {
@@ -949,7 +873,7 @@ describe("useTrips", () => {
     it("handles typical delete trip flow", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       act(() => {
         result.current.selectTrip(1);
@@ -969,7 +893,7 @@ describe("useTrips", () => {
     it("handles browsing through trips", async () => {
       const { result } = renderHook(() => useTrips());
 
-      await advancePastLoading();
+      
 
       expect(result.current.currentTrip.city).toBe("Rome");
 

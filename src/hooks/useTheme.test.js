@@ -8,10 +8,6 @@ import { renderHook, act } from "@testing-library/react";
 import useTheme from "./useTheme";
 
 describe("useTheme", () => {
-  // Store original values to restore after tests
-  let originalLocalStorage;
-  let originalMatchMedia;
-
   beforeEach(() => {
     // Reset localStorage mock
     window.localStorage.getItem.mockClear();
@@ -478,7 +474,7 @@ describe("useTheme", () => {
 
     it("changing one instance does not automatically update another", () => {
       const { result: result1 } = renderHook(() => useTheme());
-      const { result: result2 } = renderHook(() => useTheme());
+      renderHook(() => useTheme());
 
       act(() => {
         result1.current.toggleDarkMode();

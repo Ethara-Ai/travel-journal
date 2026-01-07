@@ -3,10 +3,9 @@ import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Download, Maximize2 } fr
 
 /**
  * ImageGallery - A reusable image gallery component with lightbox
- * 
+ *
  * @param {Array} images - Array of image objects { src, alt, caption }
  * @param {boolean} darkMode - Theme mode
- * @param {string} layout - "grid" | "masonry" | "carousel"
  * @param {number} columns - Number of columns for grid layout
  * @param {boolean} showThumbnails - Show thumbnail navigation
  * @param {boolean} autoPlay - Auto-play carousel
@@ -16,7 +15,6 @@ import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Download, Maximize2 } fr
 const ImageGallery = ({
   images = [],
   darkMode = false,
-  layout = "grid",
   columns = 3,
   showThumbnails = true,
   autoPlay = false,
@@ -50,7 +48,7 @@ const ImageGallery = ({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (selectedIndex === null) return;
-      
+
       if (e.key === "Escape") closeLightbox();
       if (e.key === "ArrowLeft") goToPrevious();
       if (e.key === "ArrowRight") goToNext();
@@ -80,9 +78,7 @@ const ImageGallery = ({
     return (
       <div
         className={`flex items-center justify-center p-8 rounded-xl border-2 border-dashed ${
-          darkMode
-            ? "bg-gray-800/50 border-gray-600 text-gray-400"
-            : "bg-gray-50 border-gray-300 text-gray-500"
+          darkMode ? "bg-gray-800/50 border-gray-600 text-gray-400" : "bg-gray-50 border-gray-300 text-gray-500"
         }`}
       >
         No images to display
@@ -93,9 +89,7 @@ const ImageGallery = ({
   return (
     <>
       {/* Gallery Grid */}
-      <div
-        className={`grid ${gridColsClass[columns] || "grid-cols-3"} gap-4 ${className}`}
-      >
+      <div className={`grid ${gridColsClass[columns] || "grid-cols-3"} gap-4 ${className}`}>
         {images.map((image, index) => (
           <div
             key={index}
@@ -109,7 +103,7 @@ const ImageGallery = ({
               alt={image.alt || `Image ${index + 1}`}
               className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
             />
-            
+
             {/* Overlay */}
             <div
               className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
@@ -126,13 +120,7 @@ const ImageGallery = ({
                   darkMode ? "bg-gray-900/90" : "bg-white/90"
                 } backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform duration-300`}
               >
-                <p
-                  className={`text-sm truncate ${
-                    darkMode ? "text-gray-200" : "text-gray-700"
-                  }`}
-                >
-                  {image.caption}
-                </p>
+                <p className={`text-sm truncate ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{image.caption}</p>
               </div>
             )}
           </div>
@@ -242,9 +230,7 @@ const ImageGallery = ({
                     setIsZoomed(false);
                   }}
                   className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
-                    index === selectedIndex
-                      ? "ring-2 ring-sky-500 scale-110"
-                      : "opacity-60 hover:opacity-100"
+                    index === selectedIndex ? "ring-2 ring-sky-500 scale-110" : "opacity-60 hover:opacity-100"
                   }`}
                 >
                   <img
@@ -284,16 +270,9 @@ export const SingleImageViewer = ({ src, alt, darkMode, className = "" }) => {
         </div>
       </div>
 
-      {isOpen && (
-        <ImageGallery
-          images={[{ src, alt }]}
-          darkMode={darkMode}
-          showThumbnails={false}
-        />
-      )}
+      {isOpen && <ImageGallery images={[{ src, alt }]} darkMode={darkMode} showThumbnails={false} />}
     </>
   );
 };
 
 export default ImageGallery;
-

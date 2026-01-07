@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
-import { X, UploadCloud, PlusCircle } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { X, UploadCloud, PlusCircle, Loader2 } from "lucide-react";
 import RatingStars from "./RatingStars";
 import CustomDropdown from "./CustomDropdown";
+import { compressImage, validateImageFile, formatBytes, getBase64Size } from "../utils/imageUtils";
 
 const currentYear = new Date().getFullYear();
 
@@ -9,6 +10,7 @@ const currentYear = new Date().getFullYear();
  * TripFormModal Component
  *
  * A modal form for adding or editing trip details.
+ * Features image compression and proper form validation.
  *
  * @param {boolean} isOpen - Whether the modal is open
  * @param {Function} onClose - Handler to close the modal
@@ -86,7 +88,6 @@ const TripFormInner = ({
   const [description, setDescription] = useState(existingTrip?.description || "");
   const [highlights, setHighlights] = useState(existingTrip?.highlights?.join("\n") || "");
   const [lowlights, setLowlights] = useState(existingTrip?.lowlights?.join("\n") || "");
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(existingTrip?.image || null);
   const [imageBase64, setImageBase64] = useState(existingTrip?.image || null);
   const [imageAlt, setImageAlt] = useState(existingTrip?.imageAlt || "");
@@ -95,42 +96,100 @@ const TripFormInner = ({
   const [tags, setTags] = useState(existingTrip?.tags?.join(", ") || "");
   const [isWishlist, setIsWishlist] = useState(existingTrip?.isWishlist || false);
   const [errors, setErrors] = useState({});
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState(null);
 
   const fileInputRef = useRef(null);
 
-  const handleImageChange = (e) => {
+  /**
+   * Handle image file selection with compression
+   */
+  const handleImageChange = useCallback(async (e) => {
     const file = e.target.files ? e.target.files[0] : null;
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setImageBase64(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    if (!file) return;
 
-  const removeImage = () => {
-    setImageFile(null);
+    // Validate file first
+    const validation = validateImageFile(file, { maxFileSizeMB: 10 });
+    if (!validation.isValid) {
+      setErrors((prev) => ({ ...prev, imageFile: validation.error }));
+      return;
+    }
+
+    // Clear any previous image errors
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors.imageFile;
+      return newErrors;
+    });
+
+    setIsCompressing(true);
+    setCompressionInfo(null);
+
+    try {
+      const originalSize = file.size;
+
+      // Compress the image
+      const compressedBase64 = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 800,
+        quality: 0.8,
+        mimeType: "image/jpeg",
+      });
+
+      const compressedSize = getBase64Size(compressedBase64);
+      const savings = originalSize - compressedSize;
+      const savingsPercent = Math.round((savings / originalSize) * 100);
+
+      setImagePreview(compressedBase64);
+      setImageBase64(compressedBase64);
+      setCompressionInfo({
+        originalSize: formatBytes(originalSize),
+        compressedSize: formatBytes(compressedSize),
+        savings: savingsPercent > 0 ? `${savingsPercent}% smaller` : "No compression needed",
+      });
+    } catch (error) {
+      console.error("Image compression failed:", error);
+      setErrors((prev) => ({ ...prev, imageFile: "Failed to process image. Please try another." }));
+    } finally {
+      setIsCompressing(false);
+    }
+  }, []);
+
+  /**
+   * Remove selected image
+   */
+  const removeImage = useCallback(() => {
     setImagePreview(null);
     setImageBase64(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Handle continent change and auto-select first country
-  const handleContinentChange = (newContinent) => {
-    setContinent(newContinent);
-    const countriesInContinent = continentCountryMap[newContinent] || [];
-    if (countriesInContinent.length > 0) {
-      setCountry(countriesInContinent[0].name);
-    } else {
-      setCountry("");
+    setCompressionInfo(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
-  };
+  }, []);
 
-  const validateForm = () => {
+  /**
+   * Handle continent change and auto-select first country
+   */
+  const handleContinentChange = useCallback(
+    (newContinent) => {
+      setContinent(newContinent);
+      const countriesInContinent = continentCountryMap[newContinent] || [];
+      if (countriesInContinent.length > 0) {
+        setCountry(countriesInContinent[0].name);
+      } else {
+        setCountry("");
+      }
+    },
+    [continentCountryMap],
+  );
+
+  /**
+   * Validate form and return validation result
+   * Returns the errors object directly instead of relying on state
+   */
+  const validateForm = useCallback(() => {
     const newErrors = {};
+
     if (!continent) newErrors.continent = "Continent is required.";
     if (!country) newErrors.country = "Country is required.";
     if (!city.trim()) newErrors.city = "City is required.";
@@ -142,49 +201,85 @@ const TripFormInner = ({
     if (!imageBase64 && !existingTrip?.image) newErrors.imageFile = "Trip image is required.";
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      const firstErrorKey = Object.keys(errors)[0];
-      if (firstErrorKey) {
-        const errorElement = document.getElementById(firstErrorKey);
-        errorElement?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Return the errors object directly for immediate use
+    return newErrors;
+  }, [continent, country, city, description, rating, highlights, notes, expenses, imageBase64, existingTrip?.image]);
+
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+
+      // Validate and get errors directly (not from state)
+      const validationErrors = validateForm();
+      const isValid = Object.keys(validationErrors).length === 0;
+
+      if (!isValid) {
+        // Use the returned errors, not the state
+        const firstErrorKey = Object.keys(validationErrors)[0];
+        if (firstErrorKey) {
+          const errorElement = document.getElementById(firstErrorKey);
+          errorElement?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        return;
       }
-      return;
-    }
 
-    const tripData = {
-      id: existingTrip?.id || nextTripId,
+      const tripData = {
+        id: existingTrip?.id || nextTripId,
+        continent,
+        country,
+        city,
+        date: `${selectedMonth} ${selectedYear}`,
+        rating,
+        description,
+        highlights: highlights
+          .split("\n")
+          .map((h) => h.trim())
+          .filter(Boolean),
+        lowlights: lowlights
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean),
+        image: imageBase64 || existingTrip?.image || `https://source.unsplash.com/800x600/?${city},${country}`,
+        imageAlt: imageAlt.trim() || `Image of ${city}, ${country}`,
+        color: continentColors[continent] || "#6366f1",
+        notes,
+        expenses,
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        isWishlist,
+      };
+
+      onSaveTrip(tripData);
+    },
+    [
+      validateForm,
+      existingTrip,
+      nextTripId,
       continent,
       country,
       city,
-      date: `${selectedMonth} ${selectedYear}`,
+      selectedMonth,
+      selectedYear,
       rating,
       description,
-      highlights: highlights
-        .split("\n")
-        .map((h) => h.trim())
-        .filter(Boolean),
-      lowlights: lowlights
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean),
-      image: imageBase64 || `https://source.unsplash.com/800x600/?${city},${country}`,
-      imageAlt: imageAlt.trim() || `Image of ${city}, ${country}`,
-      color: continentColors[continent] || "#6366f1",
+      highlights,
+      lowlights,
+      imageBase64,
+      imageAlt,
+      continentColors,
       notes,
       expenses,
-      tags: tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      tags,
       isWishlist,
-    };
-    onSaveTrip(tripData);
-  };
+      onSaveTrip,
+    ],
+  );
 
   // Styling classes
   const inputBaseClass = `w-full p-2.5 rounded-xl border-2 transition-all duration-300 text-sm outline-none`;
@@ -352,36 +447,51 @@ const TripFormInner = ({
             htmlFor="imageUpload"
             className={`mt-1 flex flex-col justify-center items-center px-6 py-5 border-2 ${
               darkMode ? "border-gray-600 hover:border-gray-500" : "border-gray-300 hover:border-gray-400"
-            } ${
-              errors.imageFile ? (darkMode ? "border-red-500" : "border-red-400") : ""
-            } border-dashed rounded-md cursor-pointer transition-colors duration-200`}
+            } ${errors.imageFile ? (darkMode ? "border-red-500" : "border-red-400") : ""} border-dashed rounded-md ${
+              isCompressing ? "cursor-wait opacity-70" : "cursor-pointer"
+            } transition-colors duration-200`}
           >
-            <UploadCloud className={`mx-auto h-8 w-8 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />
-            <div className={`flex text-xs mt-1 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              <span
-                className={`font-medium ${
-                  darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"
-                }`}
-              >
-                Upload a file
-              </span>
-              <input
-                id="imageUpload"
-                name="imageUpload"
-                type="file"
-                accept="image/png, image/jpeg, image/gif"
-                className="sr-only"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-              />
-              <p className="pl-1">or drag and drop</p>
-            </div>
-            <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>PNG, JPG, GIF up to 5MB</p>
-            {imageFile && (
-              <p className={`text-xs mt-1 ${darkMode ? "text-green-400" : "text-green-600"}`}>{imageFile.name}</p>
+            {isCompressing ? (
+              <>
+                <Loader2 className={`mx-auto h-8 w-8 ${darkMode ? "text-blue-400" : "text-blue-500"} animate-spin`} />
+                <p className={`text-xs mt-2 ${darkMode ? "text-gray-300" : "text-gray-600"}`}>Compressing image...</p>
+              </>
+            ) : (
+              <>
+                <UploadCloud className={`mx-auto h-8 w-8 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />
+                <div className={`flex text-xs mt-1 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  <span
+                    className={`font-medium ${
+                      darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"
+                    }`}
+                  >
+                    Upload a file
+                  </span>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                  PNG, JPG, GIF up to 10MB (auto-compressed)
+                </p>
+              </>
             )}
+            <input
+              id="imageUpload"
+              name="imageUpload"
+              type="file"
+              accept="image/png, image/jpeg, image/gif, image/webp"
+              className="sr-only"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              disabled={isCompressing}
+            />
           </label>
           {errors.imageFile && <p className={errorTextClass}>{errors.imageFile}</p>}
+          {compressionInfo && (
+            <p className={`text-xs mt-1 ${darkMode ? "text-green-400" : "text-green-600"}`}>
+              ✓ Compressed: {compressionInfo.originalSize} → {compressionInfo.compressedSize} ({compressionInfo.savings}
+              )
+            </p>
+          )}
         </div>
 
         {/* Image Preview */}
@@ -391,7 +501,7 @@ const TripFormInner = ({
             <button
               type="button"
               onClick={removeImage}
-              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              className="cursor-pointer absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
               aria-label="Remove image"
             >
               <X className="h-4 w-4" />
@@ -534,11 +644,12 @@ const TripFormInner = ({
         <div className="pt-4">
           <button
             type="submit"
+            disabled={isCompressing}
             className={`cursor-pointer w-full py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 shadow-lg ${
               darkMode
                 ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white"
                 : "bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
-            } transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl`}
+            } transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
           >
             <PlusCircle className="h-5 w-5" />
             <span>{existingTrip ? "Save Changes" : "Add Trip"}</span>

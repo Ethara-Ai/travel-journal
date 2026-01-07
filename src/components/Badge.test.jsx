@@ -36,7 +36,7 @@ describe("Badge", () => {
           <Badge>First</Badge>
           <Badge>Second</Badge>
           <Badge>Third</Badge>
-        </>
+        </>,
       );
 
       expect(screen.getByText("First")).toBeInTheDocument();
@@ -101,7 +101,11 @@ describe("Badge", () => {
     });
 
     it("renders custom variant", () => {
-      render(<Badge variant="custom" customColor="bg-pink-500 text-white">Custom</Badge>);
+      render(
+        <Badge variant="custom" customColor="bg-pink-500 text-white">
+          Custom
+        </Badge>,
+      );
       const badge = screen.getByText("Custom");
       expect(badge).toBeInTheDocument();
     });
@@ -153,13 +157,21 @@ describe("Badge", () => {
     });
 
     it("applies dark mode styles for success variant", () => {
-      render(<Badge darkMode={true} variant="success">Dark Success</Badge>);
+      render(
+        <Badge darkMode={true} variant="success">
+          Dark Success
+        </Badge>,
+      );
       const badge = screen.getByText("Dark Success");
       expect(badge).toBeInTheDocument();
     });
 
     it("applies dark mode styles for error variant", () => {
-      render(<Badge darkMode={true} variant="error">Dark Error</Badge>);
+      render(
+        <Badge darkMode={true} variant="error">
+          Dark Error
+        </Badge>,
+      );
       const badge = screen.getByText("Dark Error");
       expect(badge).toBeInTheDocument();
     });
@@ -200,7 +212,11 @@ describe("Badge", () => {
     });
 
     it("combines outline with dark mode", () => {
-      render(<Badge outline={true} darkMode={true} variant="success">Dark Outline</Badge>);
+      render(
+        <Badge outline={true} darkMode={true} variant="success">
+          Dark Outline
+        </Badge>,
+      );
       const badge = screen.getByText("Dark Outline");
       expect(badge).toHaveClass("border-2");
     });
@@ -227,13 +243,21 @@ describe("Badge", () => {
 
     it("applies correct icon size for small badge", () => {
       const TestIcon = () => <span data-testid="test-icon">★</span>;
-      render(<Badge size="small" icon={<TestIcon />}>Small Icon</Badge>);
+      render(
+        <Badge size="small" icon={<TestIcon />}>
+          Small Icon
+        </Badge>,
+      );
       expect(screen.getByTestId("test-icon")).toBeInTheDocument();
     });
 
     it("applies correct icon size for large badge", () => {
       const TestIcon = () => <span data-testid="test-icon">★</span>;
-      render(<Badge size="large" icon={<TestIcon />}>Large Icon</Badge>);
+      render(
+        <Badge size="large" icon={<TestIcon />}>
+          Large Icon
+        </Badge>,
+      );
       expect(screen.getByTestId("test-icon")).toBeInTheDocument();
     });
   });
@@ -256,7 +280,11 @@ describe("Badge", () => {
 
     it("calls onRemove when remove button is clicked", () => {
       const handleRemove = vi.fn();
-      render(<Badge removable={true} onRemove={handleRemove}>Removable</Badge>);
+      render(
+        <Badge removable={true} onRemove={handleRemove}>
+          Removable
+        </Badge>,
+      );
 
       const removeButton = screen.getByRole("button", { name: /remove/i });
       fireEvent.click(removeButton);
@@ -266,7 +294,11 @@ describe("Badge", () => {
 
     it("does not call onRemove when badge itself is clicked", () => {
       const handleRemove = vi.fn();
-      render(<Badge removable={true} onRemove={handleRemove}>Removable</Badge>);
+      render(
+        <Badge removable={true} onRemove={handleRemove}>
+          Removable
+        </Badge>,
+      );
 
       const badge = screen.getByText("Removable");
       fireEvent.click(badge);
@@ -335,7 +367,7 @@ describe("Badge", () => {
           className="test-class"
         >
           Full Badge
-        </Badge>
+        </Badge>,
       );
 
       expect(screen.getByText("Full Badge")).toBeInTheDocument();
@@ -348,7 +380,7 @@ describe("Badge", () => {
       render(
         <Badge outline={true} icon={<TestIcon />} removable={true}>
           Outline with extras
-        </Badge>
+        </Badge>,
       );
 
       expect(screen.getByText("Outline with extras")).toBeInTheDocument();
@@ -377,11 +409,7 @@ describe("BadgeGroup", () => {
     });
 
     it("renders badges from array of objects with label", () => {
-      const badges = [
-        { label: "First" },
-        { label: "Second" },
-        { label: "Third" },
-      ];
+      const badges = [{ label: "First" }, { label: "Second" }, { label: "Third" }];
       render(<BadgeGroup badges={badges} />);
 
       expect(screen.getByText("First")).toBeInTheDocument();
@@ -390,12 +418,7 @@ describe("BadgeGroup", () => {
     });
 
     it("applies shared variant to all badges", () => {
-      render(
-        <BadgeGroup
-          badges={["One", "Two"]}
-          variant="success"
-        />
-      );
+      render(<BadgeGroup badges={["One", "Two"]} variant="success" />);
 
       expect(screen.getByText("One")).toBeInTheDocument();
       expect(screen.getByText("Two")).toBeInTheDocument();
@@ -413,33 +436,21 @@ describe("BadgeGroup", () => {
     });
 
     it("applies shared dark mode to all badges", () => {
-      render(
-        <BadgeGroup
-          badges={["Dark1", "Dark2"]}
-          darkMode={true}
-        />
-      );
+      render(<BadgeGroup badges={["Dark1", "Dark2"]} darkMode={true} />);
 
       expect(screen.getByText("Dark1")).toBeInTheDocument();
       expect(screen.getByText("Dark2")).toBeInTheDocument();
     });
 
     it("applies shared size to all badges", () => {
-      render(
-        <BadgeGroup
-          badges={["Small1", "Small2"]}
-          size="small"
-        />
-      );
+      render(<BadgeGroup badges={["Small1", "Small2"]} size="small" />);
 
       expect(screen.getByText("Small1")).toBeInTheDocument();
       expect(screen.getByText("Small2")).toBeInTheDocument();
     });
 
     it("applies custom className to container", () => {
-      const { container } = render(
-        <BadgeGroup badges={["Test"]} className="custom-group" />
-      );
+      const { container } = render(<BadgeGroup badges={["Test"]} className="custom-group" />);
 
       expect(container.querySelector(".custom-group")).toBeInTheDocument();
     });
@@ -476,10 +487,7 @@ describe("BadgeGroup", () => {
 
   describe("badges with icons", () => {
     it("renders badges with icons", () => {
-      const badges = [
-        { label: "With Icon", icon: <span data-testid="icon-1">★</span> },
-        { label: "No Icon" },
-      ];
+      const badges = [{ label: "With Icon", icon: <span data-testid="icon-1">★</span> }, { label: "No Icon" }];
       render(<BadgeGroup badges={badges} />);
 
       expect(screen.getByTestId("icon-1")).toBeInTheDocument();
@@ -561,23 +569,68 @@ describe("StatusBadge", () => {
   });
 
   describe("all statuses with variants", () => {
-    const statusVariantMap = {
-      active: "success",
-      inactive: "default",
-      pending: "warning",
-      error: "error",
-      completed: "success",
-      inProgress: "info",
-      visited: "success",
-      wishlist: "primary",
-    };
+    it("active status uses success variant", () => {
+      render(<StatusBadge status="active" />);
+      const badge = screen.getByText("Active");
+      expect(badge).toBeInTheDocument();
+      // Success variant in light mode uses emerald colors
+      expect(badge).toHaveClass("text-emerald-700");
+    });
 
-    Object.entries(statusVariantMap).forEach(([status, expectedVariant]) => {
-      it(`${status} status uses ${expectedVariant} variant`, () => {
-        render(<StatusBadge status={status} />);
-        // Just verify it renders without error
-        expect(screen.getByRole("generic")).toBeInTheDocument();
-      });
+    it("inactive status uses default variant", () => {
+      render(<StatusBadge status="inactive" />);
+      const badge = screen.getByText("Inactive");
+      expect(badge).toBeInTheDocument();
+      // Default variant in light mode uses gray colors
+      expect(badge).toHaveClass("text-gray-700");
+    });
+
+    it("pending status uses warning variant", () => {
+      render(<StatusBadge status="pending" />);
+      const badge = screen.getByText("Pending");
+      expect(badge).toBeInTheDocument();
+      // Warning variant in light mode uses amber colors
+      expect(badge).toHaveClass("text-amber-700");
+    });
+
+    it("error status uses error variant", () => {
+      render(<StatusBadge status="error" />);
+      const badge = screen.getByText("Error");
+      expect(badge).toBeInTheDocument();
+      // Error variant in light mode uses red colors
+      expect(badge).toHaveClass("text-red-700");
+    });
+
+    it("completed status uses success variant", () => {
+      render(<StatusBadge status="completed" />);
+      const badge = screen.getByText("Completed");
+      expect(badge).toBeInTheDocument();
+      // Success variant in light mode uses emerald colors
+      expect(badge).toHaveClass("text-emerald-700");
+    });
+
+    it("inProgress status uses info variant", () => {
+      render(<StatusBadge status="inProgress" />);
+      const badge = screen.getByText("In Progress");
+      expect(badge).toBeInTheDocument();
+      // Info variant in light mode uses sky colors
+      expect(badge).toHaveClass("text-sky-700");
+    });
+
+    it("visited status uses success variant", () => {
+      render(<StatusBadge status="visited" />);
+      const badge = screen.getByText("Visited");
+      expect(badge).toBeInTheDocument();
+      // Success variant in light mode uses emerald colors
+      expect(badge).toHaveClass("text-emerald-700");
+    });
+
+    it("wishlist status uses primary variant", () => {
+      render(<StatusBadge status="wishlist" />);
+      const badge = screen.getByText("Wishlist");
+      expect(badge).toBeInTheDocument();
+      // Primary variant uses gradient with white text
+      expect(badge).toHaveClass("text-white");
     });
   });
 });

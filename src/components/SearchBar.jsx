@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, X, Filter } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 /**
  * SearchBar - A reusable search component with optional filters
- * 
+ *
  * @param {string} value - Current search value
  * @param {function} onChange - Callback when search value changes
  * @param {string} placeholder - Placeholder text
@@ -84,13 +84,7 @@ const SearchBar = ({
         >
           <Search
             className={`${iconSizeClasses[size]} ${
-              isFocused
-                ? darkMode
-                  ? "text-sky-400"
-                  : "text-sky-500"
-                : darkMode
-                  ? "text-gray-400"
-                  : "text-gray-500"
+              isFocused ? (darkMode ? "text-sky-400" : "text-sky-500") : darkMode ? "text-gray-400" : "text-gray-500"
             }`}
           />
         </div>
@@ -126,9 +120,7 @@ const SearchBar = ({
           <button
             onClick={handleClear}
             className={`absolute inset-y-0 ${iconRightClasses[size]} flex items-center cursor-pointer transition-all duration-200 ${
-              darkMode
-                ? "text-gray-400 hover:text-gray-200"
-                : "text-gray-500 hover:text-gray-700"
+              darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
             }`}
             aria-label="Clear search"
           >
@@ -138,11 +130,7 @@ const SearchBar = ({
       </div>
 
       {/* Optional Filter Component */}
-      {filterComponent && (
-        <div className="flex-shrink-0">
-          {filterComponent}
-        </div>
-      )}
+      {filterComponent && <div className="flex-shrink-0">{filterComponent}</div>}
     </div>
   );
 };
@@ -160,7 +148,6 @@ export const SearchBarWithSuggestions = ({
   maxSuggestions = 5,
   className = "",
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef(null);
 
@@ -202,9 +189,7 @@ export const SearchBarWithSuggestions = ({
       {showSuggestions && filteredSuggestions.length > 0 && (
         <div
           className={`absolute z-50 w-full mt-1.5 rounded-xl border-2 shadow-xl overflow-hidden ${
-            darkMode
-              ? "bg-gray-800/95 border-gray-600/80"
-              : "bg-white/95 border-gray-200/80"
+            darkMode ? "bg-gray-800/95 border-gray-600/80" : "bg-white/95 border-gray-200/80"
           }`}
         >
           <div className="max-h-60 overflow-y-auto dropdown-scrollbar py-1">
@@ -229,4 +214,3 @@ export const SearchBarWithSuggestions = ({
 };
 
 export default SearchBar;
-

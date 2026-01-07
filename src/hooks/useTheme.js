@@ -2,18 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 
 /**
  * useTheme - Custom hook for managing dark/light mode
- * Persists preference to localStorage
+ * Persists preference to localStorage with proper error handling
  * Respects system preference on first load
- * 
+ *
  * @returns {object} Theme state and toggle function
  */
 const useTheme = () => {
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage first
-    const storedDarkMode = localStorage.getItem("darkMode");
-    if (storedDarkMode !== null) {
-      return storedDarkMode === "true";
+    try {
+      const storedDarkMode = localStorage.getItem("darkMode");
+      if (storedDarkMode !== null) {
+        return storedDarkMode === "true";
+      }
+    } catch (error) {
+      console.error("Failed to read dark mode preference from localStorage:", error);
     }
+
     // Fall back to system preference
     if (typeof window !== "undefined") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -23,7 +28,12 @@ const useTheme = () => {
 
   // Save preference and update body/html class for scrollbar theming
   useEffect(() => {
-    localStorage.setItem("darkMode", darkMode.toString());
+    try {
+      localStorage.setItem("darkMode", darkMode.toString());
+    } catch (error) {
+      console.error("Failed to save dark mode preference to localStorage:", error);
+    }
+
     if (darkMode) {
       document.documentElement.classList.add("dark-mode");
       document.body.classList.add("dark-mode");
@@ -53,4 +63,3 @@ const useTheme = () => {
 };
 
 export default useTheme;
-

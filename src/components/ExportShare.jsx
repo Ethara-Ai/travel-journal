@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Download,
   Share2,
-  Copy,
   Check,
   Twitter,
   Facebook,
@@ -11,12 +10,11 @@ import {
   Link,
   FileText,
   Image as ImageIcon,
-  X,
 } from "lucide-react";
 
 /**
  * ExportShare - A reusable export and share component
- * 
+ *
  * @param {object} data - Data to export/share
  * @param {string} title - Title for sharing
  * @param {string} description - Description for sharing
@@ -135,9 +133,7 @@ const ExportShare = ({
           {isExportOpen && (
             <div
               className={`absolute right-0 mt-2 w-48 rounded-xl border-2 shadow-xl overflow-hidden z-50 ${
-                darkMode
-                  ? "bg-gray-800/95 border-gray-600/80"
-                  : "bg-white/95 border-gray-200/80"
+                darkMode ? "bg-gray-800/95 border-gray-600/80" : "bg-white/95 border-gray-200/80"
               }`}
             >
               <div className="py-1">
@@ -212,9 +208,7 @@ const ExportShare = ({
           {isShareOpen && (
             <div
               className={`absolute right-0 mt-2 w-56 rounded-xl border-2 shadow-xl overflow-hidden z-50 ${
-                darkMode
-                  ? "bg-gray-800/95 border-gray-600/80"
-                  : "bg-white/95 border-gray-200/80"
+                darkMode ? "bg-gray-800/95 border-gray-600/80" : "bg-white/95 border-gray-200/80"
               }`}
             >
               <div className="py-1">
@@ -255,11 +249,7 @@ const ExportShare = ({
                   )}
                 </button>
 
-                <div
-                  className={`my-1 border-t ${
-                    darkMode ? "border-gray-700" : "border-gray-200"
-                  }`}
-                />
+                <div className={`my-1 border-t ${darkMode ? "border-gray-700" : "border-gray-200"}`} />
 
                 {/* Social Platforms */}
                 <button
@@ -355,4 +345,3 @@ export const ShareButton = ({ title, text, url, darkMode, className = "" }) => {
 };
 
 export default ExportShare;
-

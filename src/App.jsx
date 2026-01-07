@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback, useState } from "react";
 import { Globe, MapPinned, PlusCircle, Image as ImageIcon } from "lucide-react";
 
 // Components
@@ -12,182 +12,108 @@ import ConfirmationModal from "./components/ConfirmationModal";
 import FlashMessage from "./components/FlashMessage";
 import LoadingSpinner from "./components/LoadingSpinner";
 
+// Hooks
+import useTrips from "./hooks/useTrips";
+import useFlashMessage from "./hooks/useFlashMessage";
+import { useModalManager } from "./hooks/useModal";
+
+// Context
+import { ThemeProvider, useThemeContext } from "./context/ThemeContext";
+
 // Data
-import { initialTripsData, continentCountryMap, continentColors, countryFlags, months, years } from "./data/tripData";
+import { continentCountryMap, continentColors, countryFlags, months, years } from "./data/tripData";
 
 // Styles
 import "./styles/TravelJournal.css";
 
-function App() {
-  const [allTrips, setAllTrips] = useState([]);
-  const [selectedTripId, setSelectedTripId] = useState(null);
+/**
+ * Main App Content Component
+ * Uses custom hooks for state management
+ */
+function AppContent() {
+  // Theme context
+  const { darkMode, toggleDarkMode } = useThemeContext();
 
-  // Derive a valid currentTripId from selectedTripId and allTrips
-  // This avoids calling setState inside useEffect
-  const currentTripId = useMemo(() => {
-    if (allTrips.length === 0) return null;
-    if (selectedTripId !== null && allTrips.find((trip) => trip.id === selectedTripId)) {
-      return selectedTripId;
-    }
-    return allTrips[0].id;
-  }, [allTrips, selectedTripId]);
+  // Trip management
+  const {
+    allTrips,
+    currentTrip,
+    currentTripId,
+    currentTripIndex,
+    isLoading,
+    totalTrips,
+    saveTrip,
+    deleteTrip,
+    selectTrip,
+    goToPrevTrip,
+    goToNextTrip,
+    getNextTripId,
+  } = useTrips();
 
-  // Wrapper to update selectedTripId (maintains same API for child components)
-  const setCurrentTripId = useCallback((id) => {
-    setSelectedTripId(id);
-  }, []);
-  const [darkMode, setDarkMode] = useState(false);
-  const [flashMessage, setFlashMessage] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Flash messages
+  const { flashMessage, showSuccess, clearFlashMessage } = useFlashMessage();
 
-  const [isDestinationsModalOpen, setIsDestinationsModalOpen] = useState(false);
-  const [isTripFormModalOpen, setIsTripFormModalOpen] = useState(false);
+  // Modal management
+  const { destinationsModal, tripFormModal, confirmationModal } = useModalManager();
+
+  // Track which trip is being edited or deleted
   const [editingTrip, setEditingTrip] = useState(null);
-
-  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [tripToDeleteId, setTripToDeleteId] = useState(null);
 
-  const showFlashMessage = (message, type) => {
-    setFlashMessage({ message, type, id: Date.now() });
-  };
+  // Handle saving a trip (add or edit)
+  const handleSaveTrip = useCallback(
+    (savedTrip) => {
+      const isEditing = saveTrip(savedTrip);
+      tripFormModal.close();
+      setEditingTrip(null);
+      showSuccess(isEditing ? "Trip updated successfully!" : "Trip added successfully!");
+    },
+    [saveTrip, tripFormModal, showSuccess],
+  );
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const loadData = async () => {
-      // Simulate minimum loading time for smooth UX
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const storedTrips = localStorage.getItem("travelJournalTrips");
-      const storedDarkMode = localStorage.getItem("darkMode");
-
-      if (storedTrips) {
-        const parsedTrips = JSON.parse(storedTrips);
-        // Load initial data if localStorage is empty
-        if (parsedTrips.length === 0) {
-          setAllTrips(initialTripsData);
-        } else {
-          setAllTrips(parsedTrips);
-        }
-      } else {
-        setAllTrips(initialTripsData);
-      }
-
-      if (storedDarkMode !== null) {
-        setDarkMode(storedDarkMode === "true");
-      } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setDarkMode(prefersDark);
-      }
-
-      setIsLoading(false);
-    };
-
-    loadData();
-  }, []);
-
-  // Save trips to localStorage
-  useEffect(() => {
-    localStorage.setItem("travelJournalTrips", JSON.stringify(allTrips));
-  }, [allTrips]);
-
-  // Save dark mode preference and update body/html class for scrollbar theming
-  useEffect(() => {
-    localStorage.setItem("darkMode", darkMode.toString());
-    if (darkMode) {
-      document.documentElement.classList.add("dark-mode");
-      document.body.classList.add("dark-mode");
-    } else {
-      document.documentElement.classList.remove("dark-mode");
-      document.body.classList.remove("dark-mode");
-    }
-  }, [darkMode]);
-
-  // Disable background scrolling when any modal is open
-  useEffect(() => {
-    const isAnyModalOpen = isDestinationsModalOpen || isTripFormModalOpen || isConfirmationModalOpen;
-    if (isAnyModalOpen) {
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.overflow = "hidden";
-    } else {
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-    }
-    // Cleanup on unmount
-    return () => {
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-    };
-  }, [isDestinationsModalOpen, isTripFormModalOpen, isConfirmationModalOpen]);
-
-  const currentTrip = allTrips.find((trip) => trip.id === currentTripId);
-
-  const handlePrevTrip = useCallback(() => {
-    if (allTrips.length <= 1) return;
-    const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
-    const prevIndex = (currentIndex - 1 + allTrips.length) % allTrips.length;
-    setSelectedTripId(allTrips[prevIndex].id);
-  }, [allTrips, currentTripId]);
-
-  const handleNextTrip = useCallback(() => {
-    if (allTrips.length <= 1) return;
-    const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
-    const nextIndex = (currentIndex + 1) % allTrips.length;
-    setSelectedTripId(allTrips[nextIndex].id);
-  }, [allTrips, currentTripId]);
-
-  const handleSaveTrip = (savedTrip) => {
-    const existingIndex = allTrips.findIndex((t) => t.id === savedTrip.id);
-    const isEditing = existingIndex > -1;
-    let updatedTrips;
-    if (isEditing) {
-      updatedTrips = allTrips.map((t) => (t.id === savedTrip.id ? savedTrip : t));
-    } else {
-      updatedTrips = [...allTrips, savedTrip];
-    }
-    setAllTrips(updatedTrips);
-    setCurrentTripId(savedTrip.id);
-    setIsTripFormModalOpen(false);
+  // Open add trip modal
+  const openAddTripModal = useCallback(() => {
     setEditingTrip(null);
-    showFlashMessage(isEditing ? "Trip updated successfully!" : "Trip added successfully!", "success");
-  };
+    tripFormModal.open();
+  }, [tripFormModal]);
 
-  const openAddTripModal = () => {
-    setEditingTrip(null);
-    setIsTripFormModalOpen(true);
-  };
+  // Open edit trip modal
+  const openEditTripModal = useCallback(
+    (tripToEdit) => {
+      setEditingTrip(tripToEdit);
+      tripFormModal.open();
+    },
+    [tripFormModal],
+  );
 
-  const openEditTripModal = (tripToEdit) => {
-    setEditingTrip(tripToEdit);
-    setIsTripFormModalOpen(true);
-  };
+  // Request trip deletion (opens confirmation modal)
+  const handleDeleteRequest = useCallback(
+    (id) => {
+      setTripToDeleteId(id);
+      confirmationModal.open();
+    },
+    [confirmationModal],
+  );
 
-  const handleDeleteRequest = (id) => {
-    setTripToDeleteId(id);
-    setIsConfirmationModalOpen(true);
-  };
-
-  const confirmDeleteTrip = () => {
+  // Confirm and execute trip deletion
+  const confirmDeleteTrip = useCallback(() => {
     if (tripToDeleteId === null) return;
-    const deletedTrip = allTrips.find((trip) => trip.id === tripToDeleteId);
-    const updatedTrips = allTrips.filter((trip) => trip.id !== tripToDeleteId);
-    setAllTrips(updatedTrips);
-    if (currentTripId === tripToDeleteId) {
-      setCurrentTripId(updatedTrips.length > 0 ? updatedTrips[0].id : null);
-    }
+
+    const deletedTrip = deleteTrip(tripToDeleteId);
     setTripToDeleteId(null);
-    showFlashMessage(
-      deletedTrip ? `"${deletedTrip.city}" trip deleted successfully!` : "Trip deleted successfully!",
-      "success",
-    );
-  };
+    confirmationModal.close();
 
-  const getNextTripId = () => {
-    return allTrips.length > 0 ? Math.max(...allTrips.map((trip) => trip.id)) + 1 : 1;
-  };
+    showSuccess(deletedTrip ? `"${deletedTrip.city}" trip deleted successfully!` : "Trip deleted successfully!");
+  }, [tripToDeleteId, deleteTrip, confirmationModal, showSuccess]);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  // Handle trip selection from destinations modal
+  const handleSelectTrip = useCallback(
+    (tripId) => {
+      selectTrip(tripId);
+      destinationsModal.close();
+    },
+    [selectTrip, destinationsModal],
+  );
 
   // Show loading screen while data is being loaded
   if (isLoading) {
@@ -234,10 +160,7 @@ function App() {
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <button
-            onClick={() => {
-              setIsLoading(true);
-              setTimeout(() => setIsLoading(false), 1500);
-            }}
+            onClick={() => window.location.reload()}
             className="flex items-center group cursor-pointer bg-transparent border-none outline-none"
             aria-label="Reload Travel Journal"
           >
@@ -267,7 +190,7 @@ function App() {
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsDestinationsModalOpen(true)}
+              onClick={() => destinationsModal.open()}
               aria-label="View all destinations"
               className={`relative cursor-pointer px-4 py-2.5 rounded-full flex items-center space-x-2 shadow-md overflow-hidden ${
                 darkMode
@@ -303,13 +226,13 @@ function App() {
             <div className="animate-fadeIn">
               <TripCard
                 trip={currentTrip}
-                index={allTrips.findIndex((t) => t.id === currentTripId)}
-                totalTrips={allTrips.length}
+                index={currentTripIndex}
+                totalTrips={totalTrips}
                 darkMode={darkMode}
                 continentColors={continentColors}
                 countryFlags={countryFlags}
-                onPrev={handlePrevTrip}
-                onNext={handleNextTrip}
+                onPrev={goToPrevTrip}
+                onNext={goToNextTrip}
                 onEdit={openEditTripModal}
                 onDelete={handleDeleteRequest}
               />
@@ -359,11 +282,11 @@ function App() {
 
       {/* Modals */}
       <DestinationsModal
-        isOpen={isDestinationsModalOpen}
-        onClose={() => setIsDestinationsModalOpen(false)}
+        isOpen={destinationsModal.isOpen}
+        onClose={destinationsModal.close}
         allTrips={allTrips}
         currentTripId={currentTripId}
-        onSelectTrip={setCurrentTripId}
+        onSelectTrip={handleSelectTrip}
         darkMode={darkMode}
         continentColors={continentColors}
         countryFlags={countryFlags}
@@ -372,9 +295,9 @@ function App() {
       />
 
       <TripFormModal
-        isOpen={isTripFormModalOpen}
+        isOpen={tripFormModal.isOpen}
         onClose={() => {
-          setIsTripFormModalOpen(false);
+          tripFormModal.close();
           setEditingTrip(null);
         }}
         onSaveTrip={handleSaveTrip}
@@ -388,8 +311,11 @@ function App() {
       />
 
       <ConfirmationModal
-        isOpen={isConfirmationModalOpen}
-        onClose={() => setIsConfirmationModalOpen(false)}
+        isOpen={confirmationModal.isOpen}
+        onClose={() => {
+          confirmationModal.close();
+          setTripToDeleteId(null);
+        }}
         onConfirm={confirmDeleteTrip}
         title="Confirm Deletion"
         message="Are you sure you want to delete this trip? This action cannot be undone."
@@ -403,11 +329,23 @@ function App() {
           key={flashMessage.id}
           message={flashMessage.message}
           type={flashMessage.type}
-          onClose={() => setFlashMessage(null)}
+          onClose={clearFlashMessage}
           darkMode={darkMode}
         />
       )}
     </div>
+  );
+}
+
+/**
+ * App Component
+ * Wraps the main content with ThemeProvider for context
+ */
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

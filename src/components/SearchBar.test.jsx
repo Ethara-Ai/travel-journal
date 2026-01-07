@@ -3,9 +3,8 @@
  * Tests rendering, user interactions, keyboard events, dark mode, and suggestions
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import SearchBar, { SearchBarWithSuggestions } from "./SearchBar";
 
 describe("SearchBar", () => {
@@ -226,7 +225,7 @@ describe("SearchBar", () => {
     });
 
     it("applies focus styles when focused", () => {
-      const { container } = render(<SearchBar value="" onChange={() => {}} />);
+      render(<SearchBar value="" onChange={() => {}} />);
       const input = screen.getByRole("textbox");
 
       fireEvent.focus(input);
@@ -236,7 +235,7 @@ describe("SearchBar", () => {
     });
 
     it("removes focus styles when blurred", () => {
-      const { container } = render(<SearchBar value="" onChange={() => {}} />);
+      render(<SearchBar value="" onChange={() => {}} />);
       const input = screen.getByRole("textbox");
 
       fireEvent.focus(input);
@@ -340,24 +339,18 @@ describe("SearchBar", () => {
   // ============================================
   describe("custom className", () => {
     it("applies custom className to container", () => {
-      const { container } = render(
-        <SearchBar value="" onChange={() => {}} className="custom-class" />
-      );
+      const { container } = render(<SearchBar value="" onChange={() => {}} className="custom-class" />);
       expect(container.querySelector(".custom-class")).toBeInTheDocument();
     });
 
     it("combines custom className with default classes", () => {
-      const { container } = render(
-        <SearchBar value="" onChange={() => {}} className="my-custom-class" />
-      );
+      const { container } = render(<SearchBar value="" onChange={() => {}} className="my-custom-class" />);
       const wrapper = container.querySelector(".my-custom-class");
       expect(wrapper).toHaveClass("relative");
     });
 
     it("handles empty className", () => {
-      expect(() =>
-        render(<SearchBar value="" onChange={() => {}} className="" />)
-      ).not.toThrow();
+      expect(() => render(<SearchBar value="" onChange={() => {}} className="" />)).not.toThrow();
     });
   });
 
@@ -367,13 +360,7 @@ describe("SearchBar", () => {
   describe("filter component", () => {
     it("renders filter component when provided", () => {
       const FilterButton = () => <button data-testid="filter-btn">Filter</button>;
-      render(
-        <SearchBar
-          value=""
-          onChange={() => {}}
-          filterComponent={<FilterButton />}
-        />
-      );
+      render(<SearchBar value="" onChange={() => {}} filterComponent={<FilterButton />} />);
 
       expect(screen.getByTestId("filter-btn")).toBeInTheDocument();
     });
@@ -394,13 +381,7 @@ describe("SearchBar", () => {
           </select>
         </div>
       );
-      render(
-        <SearchBar
-          value=""
-          onChange={() => {}}
-          filterComponent={<ComplexFilter />}
-        />
-      );
+      render(<SearchBar value="" onChange={() => {}} filterComponent={<ComplexFilter />} />);
 
       expect(screen.getByTestId("complex-filter")).toBeInTheDocument();
     });
@@ -513,14 +494,7 @@ describe("SearchBar", () => {
       const handleChange = vi.fn();
       const handleSubmit = vi.fn();
 
-      render(
-        <SearchBar
-          value=""
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          placeholder="Search your trips..."
-        />
-      );
+      render(<SearchBar value="" onChange={handleChange} onSubmit={handleSubmit} placeholder="Search your trips..." />);
 
       const input = screen.getByRole("textbox");
 
@@ -536,9 +510,7 @@ describe("SearchBar", () => {
     it("handles search and clear flow", () => {
       const handleChange = vi.fn();
 
-      const { rerender } = render(
-        <SearchBar value="" onChange={handleChange} />
-      );
+      const { rerender } = render(<SearchBar value="" onChange={handleChange} />);
 
       const input = screen.getByRole("textbox");
 
@@ -574,49 +546,24 @@ describe("SearchBar", () => {
 // SearchBarWithSuggestions Tests
 // ============================================
 describe("SearchBarWithSuggestions", () => {
-  const defaultSuggestions = [
-    "Rome",
-    "Paris",
-    "Tokyo",
-    "New York",
-    "London",
-    "Barcelona",
-  ];
+  const defaultSuggestions = ["Rome", "Paris", "Tokyo", "New York", "London", "Barcelona"];
 
   // ============================================
   // Basic Rendering Tests
   // ============================================
   describe("basic rendering", () => {
     it("renders without crashing", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
       expect(screen.getByRole("textbox")).toBeInTheDocument();
     });
 
     it("renders search input", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
       expect(screen.getByRole("textbox")).toBeInTheDocument();
     });
 
     it("does not show suggestions initially", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
       expect(screen.queryByText("Rome")).not.toBeInTheDocument();
     });
   });
@@ -626,13 +573,7 @@ describe("SearchBarWithSuggestions", () => {
   // ============================================
   describe("suggestions display", () => {
     it("shows suggestions when typing", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "r" } });
@@ -641,13 +582,7 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("filters suggestions based on input", () => {
-      render(
-        <SearchBarWithSuggestions
-          value="par"
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="par" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "par" } });
@@ -657,13 +592,7 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("hides suggestions when value is empty", () => {
-      const { rerender } = render(
-        <SearchBarWithSuggestions
-          value="test"
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="test" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "" } });
@@ -674,12 +603,7 @@ describe("SearchBarWithSuggestions", () => {
 
     it("limits suggestions to maxSuggestions", () => {
       render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-          maxSuggestions={2}
-        />
+        <SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} maxSuggestions={2} />,
       );
 
       const input = screen.getByRole("textbox");
@@ -691,23 +615,8 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("defaults maxSuggestions to 5", () => {
-      const manySuggestions = [
-        "A1",
-        "A2",
-        "A3",
-        "A4",
-        "A5",
-        "A6",
-        "A7",
-        "A8",
-      ];
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={manySuggestions}
-        />
-      );
+      const manySuggestions = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8"];
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={manySuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "A" } });
@@ -723,13 +632,7 @@ describe("SearchBarWithSuggestions", () => {
   describe("suggestion selection", () => {
     it("calls onChange when suggestion is clicked", () => {
       const handleChange = vi.fn();
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={handleChange}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={handleChange} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "rom" } });
@@ -748,7 +651,7 @@ describe("SearchBarWithSuggestions", () => {
           onChange={() => {}}
           suggestions={defaultSuggestions}
           onSelectSuggestion={handleSelect}
-        />
+        />,
       );
 
       const input = screen.getByRole("textbox");
@@ -762,13 +665,7 @@ describe("SearchBarWithSuggestions", () => {
 
     it("hides suggestions after selection", () => {
       const handleChange = vi.fn();
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={handleChange}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={handleChange} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "rom" } });
@@ -791,12 +688,8 @@ describe("SearchBarWithSuggestions", () => {
       render(
         <div>
           <div data-testid="outside">Outside element</div>
-          <SearchBarWithSuggestions
-            value=""
-            onChange={() => {}}
-            suggestions={defaultSuggestions}
-          />
-        </div>
+          <SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />
+        </div>,
       );
 
       const input = screen.getByRole("textbox");
@@ -820,12 +713,7 @@ describe("SearchBarWithSuggestions", () => {
   describe("dark mode", () => {
     it("applies dark mode styles to suggestions dropdown", () => {
       render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-          darkMode={true}
-        />
+        <SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} darkMode={true} />,
       );
 
       const input = screen.getByRole("textbox");
@@ -837,12 +725,7 @@ describe("SearchBarWithSuggestions", () => {
 
     it("applies light mode styles when darkMode is false", () => {
       render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-          darkMode={false}
-        />
+        <SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} darkMode={false} />,
       );
 
       const input = screen.getByRole("textbox");
@@ -863,7 +746,7 @@ describe("SearchBarWithSuggestions", () => {
           onChange={() => {}}
           suggestions={defaultSuggestions}
           className="custom-suggestions-class"
-        />
+        />,
       );
 
       expect(container.querySelector(".custom-suggestions-class")).toBeInTheDocument();
@@ -875,13 +758,7 @@ describe("SearchBarWithSuggestions", () => {
   // ============================================
   describe("empty suggestions", () => {
     it("handles empty suggestions array", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={[]}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={[]} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "test" } });
@@ -891,13 +768,7 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("handles no matching suggestions", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "xyz123" } });
@@ -912,13 +783,7 @@ describe("SearchBarWithSuggestions", () => {
   // ============================================
   describe("case insensitivity", () => {
     it("filters suggestions case-insensitively", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "ROM" } });
@@ -927,13 +792,7 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("matches partial strings case-insensitively", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "PARIS" } });
@@ -948,13 +807,7 @@ describe("SearchBarWithSuggestions", () => {
   describe("edge cases", () => {
     it("handles rapid typing", () => {
       const handleChange = vi.fn();
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={handleChange}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={handleChange} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "r" } });
@@ -967,13 +820,7 @@ describe("SearchBarWithSuggestions", () => {
 
     it("handles special characters in suggestions", () => {
       const specialSuggestions = ["Café Paris", "São Paulo", "北京"];
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={specialSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={specialSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "Caf" } });
@@ -982,13 +829,7 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("handles undefined onSelectSuggestion gracefully", () => {
-      render(
-        <SearchBarWithSuggestions
-          value=""
-          onChange={() => {}}
-          suggestions={defaultSuggestions}
-        />
-      );
+      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "rom" } });
