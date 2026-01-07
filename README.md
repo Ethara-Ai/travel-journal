@@ -1,4 +1,4 @@
-# 🌍 Travel Journal
+# Travel Journal
 
 A beautiful, modern travel journal application built with React and Tailwind CSS. Track your adventures, rate destinations, and create a visual diary of your travels around the world.
 
@@ -9,7 +9,7 @@ A beautiful, modern travel journal application built with React and Tailwind CSS
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=flat&logo=github-actions)
 ![AWS S3](https://img.shields.io/badge/Deploy-AWS_S3-FF9900?style=flat&logo=amazon-s3)
 
-## ✨ Features
+## Features
 
 ### Core Functionality
 - ** Trip Management** - Add, edit, and delete travel experiences
@@ -67,7 +67,7 @@ npm run build
 npm run preview
 ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 travel-journal-react/
@@ -137,7 +137,7 @@ travel-journal-react/
 | `npm run test` | Run test suite |
 | `npm run test:coverage` | Run tests with coverage report |
 
-## 🚀 CI/CD Pipeline
+## CI/CD Pipeline
 
 This project uses **GitHub Actions** to automate testing, building, and deployment to **AWS S3**.
 
@@ -152,12 +152,12 @@ This project uses **GitHub Actions** to automate testing, building, and deployme
 
 ### Pipeline Features
 
-- ✅ **Automated Testing** - Runs test suite on every push/PR
-- ✅ **Code Quality** - ESLint checks for code standards
-- ✅ **Build Verification** - Ensures production build succeeds
-- ✅ **S3 Deployment** - Automatic sync to AWS S3 buckets
-- ✅ **CloudFront Invalidation** - Optional CDN cache invalidation
-- ✅ **Environment Protection** - Separate staging/production environments
+- **Automated Testing** - Runs test suite on every push/PR
+- **Code Quality** - ESLint checks for code standards
+- **Build Verification** - Ensures production build succeeds
+- **S3 Deployment** - Automatic sync to AWS S3 buckets
+- **CloudFront Invalidation** - Optional CDN cache invalidation
+- **Environment Protection** - Separate staging/production environments
 
 ### Setup Requirements
 
@@ -206,10 +206,10 @@ The app uses a sky-to-indigo gradient theme. Customize in:
 
 | Browser | Support |
 |---------|---------|
-| Chrome | ✅ Latest |
-| Firefox | ✅ Latest |
-| Safari | ✅ Latest |
-| Edge | ✅ Latest |
+| Chrome | Latest |
+| Firefox |  Latest |
+| Safari |  Latest |
+| Edge |  Latest |
 
 ##  Responsive Breakpoints
 
@@ -259,4 +259,3 @@ If you have any questions or need help, please:
 <p align="center">
   Made with for travelers everywhere
 </p>
-
