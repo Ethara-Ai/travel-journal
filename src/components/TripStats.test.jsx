@@ -7,6 +7,15 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import TripStats from "./TripStats";
 
+// Helper function to get stat value by its label
+const getStatValue = (label) => {
+  const labelElement = screen.getByText(label);
+  // The stat value is the sibling p element with the large font
+  const statCard = labelElement.closest("div");
+  const valueElement = statCard.querySelector(".text-3xl");
+  return valueElement?.textContent;
+};
+
 // Helper function to create mock trips
 const createMockTrip = (overrides = {}) => ({
   id: 1,
@@ -82,7 +91,7 @@ describe("TripStats", () => {
       const trips = [createMockTrip()];
       render(<TripStats trips={trips} darkMode={false} />);
 
-      expect(screen.getByText("1")).toBeInTheDocument();
+      expect(getStatValue("Trips Taken")).toBe("1");
       expect(screen.getByText("Trips Taken")).toBeInTheDocument();
     });
   });
@@ -94,7 +103,7 @@ describe("TripStats", () => {
     it("shows empty message when trips array is empty", () => {
       render(<TripStats trips={[]} darkMode={false} />);
       expect(
-        screen.getByText("Once you've added some visited trips, your travel stats will appear here!")
+        screen.getByText("Once you've added some visited trips, your travel stats will appear here!"),
       ).toBeInTheDocument();
     });
 
@@ -102,7 +111,7 @@ describe("TripStats", () => {
       const wishlistTrips = createMockTrips(3, (trip) => ({ ...trip, isWishlist: true }));
       render(<TripStats trips={wishlistTrips} darkMode={false} />);
       expect(
-        screen.getByText("Once you've added some visited trips, your travel stats will appear here!")
+        screen.getByText("Once you've added some visited trips, your travel stats will appear here!"),
       ).toBeInTheDocument();
     });
 
@@ -128,7 +137,7 @@ describe("TripStats", () => {
       it("shows correct count of visited trips", () => {
         const trips = createMockTrips(5);
         render(<TripStats trips={trips} darkMode={false} />);
-        expect(screen.getByText("5")).toBeInTheDocument();
+        expect(getStatValue("Trips Taken")).toBe("5");
       });
 
       it("excludes wishlist trips from count", () => {
@@ -182,7 +191,7 @@ describe("TripStats", () => {
           createMockTrip({ id: 6, continent: "Oceania" }),
         ];
         render(<TripStats trips={trips} darkMode={false} />);
-        expect(screen.getByText("6")).toBeInTheDocument();
+        expect(getStatValue("Continents")).toBe("6");
       });
     });
 
@@ -206,7 +215,7 @@ describe("TripStats", () => {
           createMockTrip({ id: 3, country: "Italy", city: "Florence" }),
         ];
         render(<TripStats trips={trips} darkMode={false} />);
-        expect(screen.getByText("1")).toBeInTheDocument();
+        expect(getStatValue("Countries")).toBe("1");
       });
 
       it("counts all unique countries", () => {
@@ -218,7 +227,7 @@ describe("TripStats", () => {
           createMockTrip({ id: 5, country: "Egypt" }),
         ];
         render(<TripStats trips={trips} darkMode={false} />);
-        expect(screen.getByText("5")).toBeInTheDocument();
+        expect(getStatValue("Countries")).toBe("5");
       });
     });
 
@@ -235,10 +244,7 @@ describe("TripStats", () => {
       });
 
       it("handles decimal average ratings", () => {
-        const trips = [
-          createMockTrip({ id: 1, rating: 5 }),
-          createMockTrip({ id: 2, rating: 4 }),
-        ];
+        const trips = [createMockTrip({ id: 1, rating: 5 }), createMockTrip({ id: 2, rating: 4 })];
         // Average: (5+4)/2 = 4.5
         render(<TripStats trips={trips} darkMode={false} />);
         expect(screen.getByText("4.5/5")).toBeInTheDocument();
@@ -301,14 +307,14 @@ describe("TripStats", () => {
     it("renders empty state in dark mode", () => {
       render(<TripStats trips={[]} darkMode={true} />);
       expect(
-        screen.getByText("Once you've added some visited trips, your travel stats will appear here!")
+        screen.getByText("Once you've added some visited trips, your travel stats will appear here!"),
       ).toBeInTheDocument();
     });
 
     it("renders empty state in light mode", () => {
       render(<TripStats trips={[]} darkMode={false} />);
       expect(
-        screen.getByText("Once you've added some visited trips, your travel stats will appear here!")
+        screen.getByText("Once you've added some visited trips, your travel stats will appear here!"),
       ).toBeInTheDocument();
     });
 
@@ -379,17 +385,12 @@ describe("TripStats", () => {
     });
 
     it("handles trips with missing properties", () => {
-      const trips = [
-        { id: 1, isWishlist: false, country: "Italy", continent: "Europe", rating: 4 },
-      ];
+      const trips = [{ id: 1, isWishlist: false, country: "Italy", continent: "Europe", rating: 4 }];
       expect(() => render(<TripStats trips={trips} darkMode={false} />)).not.toThrow();
     });
 
     it("handles trips with rating 0", () => {
-      const trips = [
-        createMockTrip({ id: 1, rating: 0 }),
-        createMockTrip({ id: 2, rating: 0 }),
-      ];
+      const trips = [createMockTrip({ id: 1, rating: 0 }), createMockTrip({ id: 2, rating: 0 })];
       render(<TripStats trips={trips} darkMode={false} />);
       expect(screen.getByText("0.0/5")).toBeInTheDocument();
     });
@@ -415,9 +416,9 @@ describe("TripStats", () => {
       ];
       render(<TripStats trips={trips} darkMode={false} />);
       // Countries should be 1 (same country name)
-      expect(screen.getByText("1")).toBeInTheDocument();
+      expect(getStatValue("Countries")).toBe("1");
       // Continents should be 2
-      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(getStatValue("Continents")).toBe("2");
     });
   });
 
@@ -438,19 +439,18 @@ describe("TripStats", () => {
       ];
       render(<TripStats trips={trips} darkMode={false} />);
 
-      expect(screen.getByText("8")).toBeInTheDocument(); // Total trips
-      expect(screen.getByText("6")).toBeInTheDocument(); // Continents
-      expect(screen.getByText("4.5/5")).toBeInTheDocument(); // Average rating
+      expect(getStatValue("Trips Taken")).toBe("8"); // Total trips
+      expect(getStatValue("Continents")).toBe("6"); // Continents
+      expect(getStatValue("Countries")).toBe("8"); // Countries
+      expect(getStatValue("Avg. Rating")).toBe("4.5/5"); // Average rating
     });
 
     it("displays stats for a new traveler with one trip", () => {
-      const trips = [
-        createMockTrip({ continent: "Europe", country: "Italy", rating: 5 }),
-      ];
+      const trips = [createMockTrip({ continent: "Europe", country: "Italy", rating: 5 })];
       render(<TripStats trips={trips} darkMode={false} />);
 
-      expect(screen.getByText("1")).toBeInTheDocument(); // Total trips
-      expect(screen.getByText("5.0/5")).toBeInTheDocument(); // Average rating
+      expect(getStatValue("Trips Taken")).toBe("1"); // Total trips
+      expect(getStatValue("Avg. Rating")).toBe("5.0/5"); // Average rating
     });
 
     it("displays stats for someone who revisits favorite destinations", () => {
@@ -462,8 +462,8 @@ describe("TripStats", () => {
       ];
       render(<TripStats trips={trips} darkMode={false} />);
 
-      expect(screen.getByText("4")).toBeInTheDocument(); // Total trips
-      expect(screen.getByText("1")).toBeInTheDocument(); // Countries (just Italy)
+      expect(getStatValue("Trips Taken")).toBe("4"); // Total trips
+      expect(getStatValue("Countries")).toBe("1"); // Countries (just Italy)
     });
 
     it("handles user with only wishlist items", () => {
@@ -475,7 +475,7 @@ describe("TripStats", () => {
       render(<TripStats trips={trips} darkMode={false} />);
 
       expect(
-        screen.getByText("Once you've added some visited trips, your travel stats will appear here!")
+        screen.getByText("Once you've added some visited trips, your travel stats will appear here!"),
       ).toBeInTheDocument();
     });
 

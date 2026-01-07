@@ -24,9 +24,7 @@ describe("ThemeToggle", () => {
     });
 
     it("renders an icon inside the button", () => {
-      const { container } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { container } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
       const svg = container.querySelector("svg");
       expect(svg).toBeInTheDocument();
     });
@@ -37,35 +35,27 @@ describe("ThemeToggle", () => {
   // ============================================
   describe("icons", () => {
     it("shows Moon icon when in light mode", () => {
-      const { container } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { container } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
       const svg = container.querySelector("svg");
       expect(svg).toBeInTheDocument();
       // In light mode, should show Moon icon to switch to dark
     });
 
     it("shows Sun icon when in dark mode", () => {
-      const { container } = render(
-        <ThemeToggle darkMode={true} toggleDarkMode={() => {}} />
-      );
+      const { container } = render(<ThemeToggle darkMode={true} toggleDarkMode={() => {}} />);
       const svg = container.querySelector("svg");
       expect(svg).toBeInTheDocument();
       // In dark mode, should show Sun icon to switch to light
     });
 
     it("icon has correct size classes", () => {
-      const { container } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { container } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
       const svg = container.querySelector("svg");
       expect(svg).toHaveClass("h-6", "w-6");
     });
 
     it("icon has transition classes", () => {
-      const { container } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { container } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
       const svg = container.querySelector("svg");
       expect(svg).toHaveClass("transition-opacity");
     });
@@ -274,9 +264,7 @@ describe("ThemeToggle", () => {
   // ============================================
   describe("state transitions", () => {
     it("switches from light to dark mode styling on rerender", () => {
-      const { rerender } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { rerender } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
 
       let button = screen.getByRole("button");
       expect(button).toHaveClass("bg-white");
@@ -290,9 +278,7 @@ describe("ThemeToggle", () => {
     });
 
     it("switches from dark to light mode styling on rerender", () => {
-      const { rerender } = render(
-        <ThemeToggle darkMode={true} toggleDarkMode={() => {}} />
-      );
+      const { rerender } = render(<ThemeToggle darkMode={true} toggleDarkMode={() => {}} />);
 
       let button = screen.getByRole("button");
       expect(button).toHaveClass("bg-gray-700");
@@ -304,9 +290,7 @@ describe("ThemeToggle", () => {
     });
 
     it("updates aria-label when mode changes", () => {
-      const { rerender } = render(
-        <ThemeToggle darkMode={false} toggleDarkMode={() => {}} />
-      );
+      const { rerender } = render(<ThemeToggle darkMode={false} toggleDarkMode={() => {}} />);
 
       expect(screen.getByLabelText("Switch to dark mode")).toBeInTheDocument();
 
@@ -338,7 +322,7 @@ describe("ThemeToggle", () => {
       const button = screen.getByRole("button");
 
       // Should not throw when clicked with undefined callback
-      expect(() => fireEvent.click(button)).toThrow();
+      expect(() => fireEvent.click(button)).not.toThrow();
     });
 
     it("renders correctly with boolean false", () => {
@@ -362,9 +346,7 @@ describe("ThemeToggle", () => {
         darkMode = !darkMode;
       });
 
-      const { rerender } = render(
-        <ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      );
+      const { rerender } = render(<ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />);
 
       // Initially in light mode
       expect(screen.getByLabelText("Switch to dark mode")).toBeInTheDocument();
@@ -386,9 +368,7 @@ describe("ThemeToggle", () => {
         darkMode = !darkMode;
       });
 
-      const { rerender } = render(
-        <ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      );
+      const { rerender } = render(<ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />);
 
       // Initially in dark mode
       expect(screen.getByLabelText("Switch to light mode")).toBeInTheDocument();

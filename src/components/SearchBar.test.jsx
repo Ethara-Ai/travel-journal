@@ -477,7 +477,8 @@ describe("SearchBar", () => {
 
     it("handles whitespace-only value", () => {
       render(<SearchBar value="   " onChange={() => {}} />);
-      expect(screen.getByDisplayValue("   ")).toBeInTheDocument();
+      const input = screen.getByRole("textbox");
+      expect(input).toHaveValue("   ");
     });
 
     it("handles numeric string value", () => {
@@ -582,10 +583,20 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("filters suggestions based on input", () => {
-      render(<SearchBarWithSuggestions value="par" onChange={() => {}} suggestions={defaultSuggestions} />);
+      let currentValue = "";
+      const handleChange = (val) => {
+        currentValue = val;
+      };
+
+      const { rerender } = render(
+        <SearchBarWithSuggestions value={currentValue} onChange={handleChange} suggestions={defaultSuggestions} />,
+      );
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "par" } });
+
+      // Rerender with the updated value to simulate controlled component behavior
+      rerender(<SearchBarWithSuggestions value="par" onChange={handleChange} suggestions={defaultSuggestions} />);
 
       expect(screen.getByText("Paris")).toBeInTheDocument();
       expect(screen.queryByText("Rome")).not.toBeInTheDocument();
@@ -768,13 +779,24 @@ describe("SearchBarWithSuggestions", () => {
     });
 
     it("handles no matching suggestions", () => {
-      render(<SearchBarWithSuggestions value="" onChange={() => {}} suggestions={defaultSuggestions} />);
+      let currentValue = "";
+      const handleChange = (val) => {
+        currentValue = val;
+      };
+
+      const { rerender } = render(
+        <SearchBarWithSuggestions value={currentValue} onChange={handleChange} suggestions={defaultSuggestions} />,
+      );
 
       const input = screen.getByRole("textbox");
       fireEvent.change(input, { target: { value: "xyz123" } });
 
-      // Should not show any suggestions
+      // Rerender with the updated value to simulate controlled component behavior
+      rerender(<SearchBarWithSuggestions value="xyz123" onChange={handleChange} suggestions={defaultSuggestions} />);
+
+      // Should not show any suggestion buttons (only the clear button might be present in SearchBar)
       expect(screen.queryByText("Rome")).not.toBeInTheDocument();
+      expect(screen.queryByText("Paris")).not.toBeInTheDocument();
     });
   });
 

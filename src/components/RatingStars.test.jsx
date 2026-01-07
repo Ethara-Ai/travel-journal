@@ -31,15 +31,7 @@ describe("RatingStars", () => {
 
     it("renders with all props provided", () => {
       const onRate = vi.fn();
-      render(
-        <RatingStars
-          rating={4}
-          darkMode={true}
-          onRate={onRate}
-          interactive={true}
-          size="h-6 w-6"
-        />
-      );
+      render(<RatingStars rating={4} darkMode={true} onRate={onRate} interactive={true} size="h-6 w-6" />);
       expect(screen.getAllByRole("img", { hidden: true })).toHaveLength(5);
     });
   });
@@ -400,9 +392,9 @@ describe("RatingStars", () => {
 
     it("handles decimal rating (rounds down implicitly)", () => {
       const { container } = render(<RatingStars rating={3.7} />);
-      // 3.7 > 0, 1, 2 but not >= 3 for index 3
+      // 3.7 > 0, 1, 2, 3 so indices 0, 1, 2, 3 are filled (4 stars)
       const filledStars = container.querySelectorAll(".fill-yellow-500");
-      expect(filledStars).toHaveLength(3);
+      expect(filledStars).toHaveLength(4);
     });
 
     it("handles NaN rating", () => {
@@ -414,9 +406,7 @@ describe("RatingStars", () => {
 
     it("renders correctly with dark mode and interactive combined", () => {
       const handleRate = vi.fn();
-      const { container } = render(
-        <RatingStars rating={2} darkMode={true} interactive={true} onRate={handleRate} />
-      );
+      const { container } = render(<RatingStars rating={2} darkMode={true} interactive={true} onRate={handleRate} />);
 
       const filledStars = container.querySelectorAll(".fill-yellow-400");
       expect(filledStars).toHaveLength(2);
@@ -471,18 +461,14 @@ describe("RatingStars", () => {
     });
 
     it("displays correctly in dark mode trip card", () => {
-      const { container } = render(
-        <RatingStars rating={5} darkMode={true} size="h-5 w-5" />
-      );
+      const { container } = render(<RatingStars rating={5} darkMode={true} size="h-5 w-5" />);
 
       const filledStars = container.querySelectorAll(".fill-yellow-400");
       expect(filledStars).toHaveLength(5);
     });
 
     it("displays correctly in light mode trip card", () => {
-      const { container } = render(
-        <RatingStars rating={5} darkMode={false} size="h-5 w-5" />
-      );
+      const { container } = render(<RatingStars rating={5} darkMode={false} size="h-5 w-5" />);
 
       const filledStars = container.querySelectorAll(".fill-yellow-500");
       expect(filledStars).toHaveLength(5);
