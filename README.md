@@ -6,6 +6,8 @@ A beautiful, modern travel journal application built with React and Tailwind CSS
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css)
 ![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=flat&logo=vite)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=flat&logo=github-actions)
+![AWS S3](https://img.shields.io/badge/Deploy-AWS_S3-FF9900?style=flat&logo=amazon-s3)
 
 ## ✨ Features
 
@@ -132,6 +134,45 @@ travel-journal-react/
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
+| `npm run test` | Run test suite |
+| `npm run test:coverage` | Run tests with coverage report |
+
+## 🚀 CI/CD Pipeline
+
+This project uses **GitHub Actions** to automate testing, building, and deployment to **AWS S3**.
+
+### Pipeline Overview
+
+| Trigger | Action |
+|---------|--------|
+| Push to `develop` | Run tests → Build → Deploy to **Staging** |
+| Push to `main` | Run tests → Build → Deploy to **Production** |
+| Pull Request | Run tests & lint only (no deployment) |
+| Manual Dispatch | Deploy to selected environment |
+
+### Pipeline Features
+
+- ✅ **Automated Testing** - Runs test suite on every push/PR
+- ✅ **Code Quality** - ESLint checks for code standards
+- ✅ **Build Verification** - Ensures production build succeeds
+- ✅ **S3 Deployment** - Automatic sync to AWS S3 buckets
+- ✅ **CloudFront Invalidation** - Optional CDN cache invalidation
+- ✅ **Environment Protection** - Separate staging/production environments
+
+### Setup Requirements
+
+To enable CI/CD, configure the following in your GitHub repository:
+
+**Secrets** (Settings → Secrets and variables → Actions):
+- `AWS_ACCESS_KEY_ID` - AWS IAM access key
+- `AWS_SECRET_ACCESS_KEY` - AWS IAM secret key
+
+**Variables** (Settings → Secrets and variables → Actions):
+- `AWS_REGION` - AWS region (e.g., `us-east-1`)
+- `S3_BUCKET_STAGING` - Staging S3 bucket name
+- `S3_BUCKET_PRODUCTION` - Production S3 bucket name
+
+For detailed setup instructions, see [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md).
 
 ## Customization
 

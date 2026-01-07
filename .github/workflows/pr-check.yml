@@ -1,0 +1,153 @@
+name: PR Check - Code Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '20'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ====================
+  # Lint Check
+  # ====================
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # ====================
+  # Test Suite
+  # ====================
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Run test coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 5
+
+  # ====================
+  # Build Verification
+  # ====================
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Check build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed: dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+          echo "Build output size:"
+          du -sh dist/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-preview
+          path: dist/
+          retention-days: 3
+
+  # ====================
+  # Summary
+  # ====================
+  summary:
+    name: PR Check Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: always()
+
+    steps:
+      - name: Check job results
+        run: |
+          echo "## PR Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.lint.result }}" == "success" ]; then
+            echo "✅ **Lint**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Lint**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ **Tests**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Tests**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.build.result }}" == "success" ]; then
+            echo "✅ **Build**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** @${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Head Branch:** ${{ github.head_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Base Branch:** ${{ github.base_ref }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any job failed
+        if: needs.lint.result == 'failure' || needs.test.result == 'failure' || needs.build.result == 'failure'
+        run: exit 1
