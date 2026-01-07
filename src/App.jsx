@@ -11,6 +11,7 @@ import TripFormModal from "./components/TripFormModal";
 import ConfirmationModal from "./components/ConfirmationModal";
 import FlashMessage from "./components/FlashMessage";
 import LoadingSpinner from "./components/LoadingSpinner";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Hooks
 import useTrips from "./hooks/useTrips";
@@ -114,6 +115,18 @@ function AppContent() {
     },
     [selectTrip, destinationsModal],
   );
+
+  // Close form modal handler (memoized to prevent re-renders)
+  const handleCloseFormModal = useCallback(() => {
+    tripFormModal.close();
+    setEditingTrip(null);
+  }, [tripFormModal]);
+
+  // Close confirmation modal handler (memoized to prevent re-renders)
+  const handleCloseConfirmationModal = useCallback(() => {
+    confirmationModal.close();
+    setTripToDeleteId(null);
+  }, [confirmationModal]);
 
   // Show loading screen while data is being loaded
   if (isLoading) {
@@ -296,10 +309,7 @@ function AppContent() {
 
       <TripFormModal
         isOpen={tripFormModal.isOpen}
-        onClose={() => {
-          tripFormModal.close();
-          setEditingTrip(null);
-        }}
+        onClose={handleCloseFormModal}
         onSaveTrip={handleSaveTrip}
         darkMode={darkMode}
         existingTrip={editingTrip}
@@ -312,10 +322,7 @@ function AppContent() {
 
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
-        onClose={() => {
-          confirmationModal.close();
-          setTripToDeleteId(null);
-        }}
+        onClose={handleCloseConfirmationModal}
         onConfirm={confirmDeleteTrip}
         title="Confirm Deletion"
         message="Are you sure you want to delete this trip? This action cannot be undone."
@@ -339,13 +346,15 @@ function AppContent() {
 
 /**
  * App Component
- * Wraps the main content with ThemeProvider for context
+ * Wraps the main content with ThemeProvider and ErrorBoundary for context and error handling
  */
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

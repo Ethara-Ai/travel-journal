@@ -1,3 +1,5 @@
+import { memo } from "react";
+import PropTypes from "prop-types";
 import { Plane, Globe, MapPinned, Star } from "lucide-react";
 
 /**
@@ -48,7 +50,7 @@ const statCardColors = {
 
 /**
  * StatCard Component - Individual stat display card
- * Extracted outside of TripStats to prevent recreation on every render
+ * Memoized to prevent unnecessary re-renders
  *
  * @param {object} props
  * @param {React.ComponentType} props.icon - Lucide icon component
@@ -57,7 +59,7 @@ const statCardColors = {
  * @param {string} props.colorName - Color scheme name (blue, purple, pink, amber)
  * @param {boolean} props.darkMode - Whether dark mode is enabled
  */
-const StatCard = ({ icon: Icon, value, label, colorName, darkMode }) => {
+const StatCard = memo(function StatCard({ icon: Icon, value, label, colorName, darkMode }) {
   const c = statCardColors[colorName] || statCardColors.blue;
 
   return (
@@ -79,17 +81,30 @@ const StatCard = ({ icon: Icon, value, label, colorName, darkMode }) => {
       </p>
     </div>
   );
+});
+
+StatCard.propTypes = {
+  icon: PropTypes.elementType.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  label: PropTypes.string.isRequired,
+  colorName: PropTypes.oneOf(["blue", "purple", "pink", "amber"]).isRequired,
+  darkMode: PropTypes.bool,
+};
+
+StatCard.defaultProps = {
+  darkMode: false,
 };
 
 /**
  * TripStats Component
  * Displays travel statistics including trips taken, continents, countries, and average rating
+ * Memoized to prevent unnecessary re-renders when parent state changes
  *
  * @param {object} props
  * @param {Array} props.trips - Array of trip objects
  * @param {boolean} props.darkMode - Whether dark mode is enabled
  */
-const TripStats = ({ trips, darkMode }) => {
+const TripStats = memo(function TripStats({ trips, darkMode }) {
   const visitedTrips = trips.filter((trip) => !trip.isWishlist);
   const totalCountries = [...new Set(visitedTrips.map((trip) => trip.country))].length;
   const totalContinents = [...new Set(visitedTrips.map((trip) => trip.continent))].length;
@@ -138,6 +153,23 @@ const TripStats = ({ trips, darkMode }) => {
       </div>
     </div>
   );
+});
+
+TripStats.propTypes = {
+  trips: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      country: PropTypes.string.isRequired,
+      continent: PropTypes.string.isRequired,
+      rating: PropTypes.number.isRequired,
+      isWishlist: PropTypes.bool,
+    }),
+  ).isRequired,
+  darkMode: PropTypes.bool,
+};
+
+TripStats.defaultProps = {
+  darkMode: false,
 };
 
 export default TripStats;

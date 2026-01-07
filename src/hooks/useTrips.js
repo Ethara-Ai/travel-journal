@@ -11,6 +11,8 @@ const useTrips = () => {
   const [allTrips, setAllTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Track initialization to prevent race condition with localStorage
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Derive currentTripId from selectedTripId and allTrips
   // This avoids calling setState inside useEffect
@@ -50,6 +52,8 @@ const useTrips = () => {
         setAllTrips(initialTripsData);
       } finally {
         setIsLoading(false);
+        // Mark as initialized AFTER data is loaded
+        setHasInitialized(true);
       }
     };
 
@@ -57,8 +61,9 @@ const useTrips = () => {
   }, []);
 
   // Save trips to localStorage whenever they change
+  // Only save AFTER initial load is complete to prevent race condition
   useEffect(() => {
-    if (!isLoading && allTrips.length >= 0) {
+    if (hasInitialized) {
       try {
         localStorage.setItem("travelJournalTrips", JSON.stringify(allTrips));
       } catch (error) {
@@ -66,33 +71,31 @@ const useTrips = () => {
         // Could be quota exceeded - notify user in production
       }
     }
-  }, [allTrips, isLoading]);
+  }, [allTrips, hasInitialized]);
 
   // Get current trip
   const currentTrip = useMemo(() => {
     return allTrips.find((trip) => trip.id === currentTripId);
   }, [allTrips, currentTripId]);
 
-  // Get current trip index
+  // Get current trip index (memoized)
   const currentTripIndex = useMemo(() => {
     return allTrips.findIndex((t) => t.id === currentTripId);
   }, [allTrips, currentTripId]);
 
-  // Navigate to previous trip
+  // Navigate to previous trip - uses memoized currentTripIndex
   const goToPrevTrip = useCallback(() => {
     if (allTrips.length <= 1) return;
-    const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
-    const prevIndex = (currentIndex - 1 + allTrips.length) % allTrips.length;
+    const prevIndex = (currentTripIndex - 1 + allTrips.length) % allTrips.length;
     setSelectedTripId(allTrips[prevIndex].id);
-  }, [allTrips, currentTripId]);
+  }, [allTrips, currentTripIndex]);
 
-  // Navigate to next trip
+  // Navigate to next trip - uses memoized currentTripIndex
   const goToNextTrip = useCallback(() => {
     if (allTrips.length <= 1) return;
-    const currentIndex = allTrips.findIndex((trip) => trip.id === currentTripId);
-    const nextIndex = (currentIndex + 1) % allTrips.length;
+    const nextIndex = (currentTripIndex + 1) % allTrips.length;
     setSelectedTripId(allTrips[nextIndex].id);
-  }, [allTrips, currentTripId]);
+  }, [allTrips, currentTripIndex]);
 
   // Get next available trip ID
   const getNextTripId = useCallback(() => {

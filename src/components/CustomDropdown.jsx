@@ -1,18 +1,36 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
+import PropTypes from "prop-types";
 import { ChevronDown, Check } from "lucide-react";
 
-const CustomDropdown = ({
+/**
+ * CustomDropdown Component
+ *
+ * A reusable, accessible dropdown select component with custom styling.
+ * Memoized to prevent unnecessary re-renders.
+ *
+ * @param {Array} options - Array of option objects with value and label
+ * @param {string|number} value - Currently selected value
+ * @param {Function} onChange - Callback when selection changes
+ * @param {string} placeholder - Placeholder text when no selection
+ * @param {boolean} darkMode - Dark mode toggle
+ * @param {boolean} disabled - Whether the dropdown is disabled
+ * @param {boolean} error - Whether to show error styling
+ * @param {string} className - Additional CSS classes
+ * @param {string} ariaLabel - Accessible label for the dropdown
+ * @param {string} id - HTML id attribute
+ */
+const CustomDropdown = memo(function CustomDropdown({
   options,
   value,
   onChange,
   placeholder = "Select an option",
-  darkMode,
+  darkMode = false,
   disabled = false,
   error = false,
   className = "",
   ariaLabel,
   id,
-}) => {
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -51,9 +69,57 @@ const CustomDropdown = ({
     setIsOpen(false);
   };
 
+  // Handle keyboard navigation
+  const handleKeyDown = (event) => {
+    if (disabled) return;
+
+    switch (event.key) {
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        setIsOpen(!isOpen);
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          // Move to next option
+          const currentIndex = options.findIndex((opt) => opt.value === value);
+          const nextIndex = Math.min(currentIndex + 1, options.length - 1);
+          onChange(options[nextIndex].value);
+        }
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        if (isOpen) {
+          // Move to previous option
+          const currentIndex = options.findIndex((opt) => opt.value === value);
+          const prevIndex = Math.max(currentIndex - 1, 0);
+          onChange(options[prevIndex].value);
+        }
+        break;
+      case "Home":
+        event.preventDefault();
+        if (options.length > 0) {
+          onChange(options[0].value);
+        }
+        break;
+      case "End":
+        event.preventDefault();
+        if (options.length > 0) {
+          onChange(options[options.length - 1].value);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   // Base styles matching the website UI
-  const baseClasses = `w-full p-2.5 rounded-xl border-2 transition-all duration-300 text-sm cursor-pointer flex items-center justify-between shadow-sm`;
-  
+  const baseClasses =
+    "w-full p-2.5 rounded-xl border-2 transition-all duration-300 text-sm cursor-pointer flex items-center justify-between shadow-sm";
+
   // State-based styles with sky/indigo theme
   const stateClasses = disabled
     ? darkMode
@@ -82,36 +148,29 @@ const CustomDropdown = ({
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-controls={id ? `${id}-listbox` : undefined}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`${baseClasses} ${stateClasses} ${focusClasses}`}
+        onKeyDown={handleKeyDown}
+        className={`${baseClasses} ${stateClasses} ${focusClasses} focus:outline-none`}
       >
-        <span className={!selectedOption ? (darkMode ? "text-gray-400" : "text-gray-500") : ""}>
-          {displayText}
-        </span>
+        <span className={!selectedOption ? (darkMode ? "text-gray-400" : "text-gray-500") : ""}>{displayText}</span>
         <ChevronDown
-          className={`h-4 w-4 transition-all duration-300 ${
-            isOpen ? "rotate-180" : ""
-          } ${
-            isOpen
-              ? darkMode
-                ? "text-sky-400"
-                : "text-sky-500"
-              : darkMode
-                ? "text-gray-400"
-                : "text-gray-500"
+          className={`h-4 w-4 transition-all duration-300 ${isOpen ? "rotate-180" : ""} ${
+            isOpen ? (darkMode ? "text-sky-400" : "text-sky-500") : darkMode ? "text-gray-400" : "text-gray-500"
           }`}
+          aria-hidden="true"
         />
       </button>
 
       {isOpen && !disabled && (
         <div
+          id={id ? `${id}-listbox` : undefined}
           className={`absolute z-50 w-full mt-1.5 rounded-xl border-2 shadow-xl overflow-hidden backdrop-blur-sm ${
-            darkMode
-              ? "bg-gray-800/95 border-gray-600/80"
-              : "bg-white/95 border-gray-200/80"
+            darkMode ? "bg-gray-800/95 border-gray-600/80" : "bg-white/95 border-gray-200/80"
           }`}
           role="listbox"
+          aria-label={ariaLabel}
         >
           <div className="max-h-60 overflow-y-auto dropdown-scrollbar py-1">
             {options.map((option, index) => (
@@ -129,16 +188,10 @@ const CustomDropdown = ({
                     : darkMode
                       ? "text-gray-200 hover:bg-gray-700/80 hover:text-sky-300"
                       : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
-                } ${
-                  index === 0 ? "rounded-t-lg" : ""
-                } ${
-                  index === options.length - 1 ? "rounded-b-lg" : ""
-                }`}
+                } ${index === 0 ? "rounded-t-lg" : ""} ${index === options.length - 1 ? "rounded-b-lg" : ""}`}
               >
                 <span>{option.label}</span>
-                {value === option.value && (
-                  <Check className="h-4 w-4 flex-shrink-0" />
-                )}
+                {value === option.value && <Check className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -146,6 +199,45 @@ const CustomDropdown = ({
       )}
     </div>
   );
+});
+
+CustomDropdown.propTypes = {
+  /** Array of option objects with value and label */
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      label: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  /** Currently selected value */
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  /** Callback when selection changes */
+  onChange: PropTypes.func.isRequired,
+  /** Placeholder text when no selection */
+  placeholder: PropTypes.string,
+  /** Dark mode toggle */
+  darkMode: PropTypes.bool,
+  /** Whether the dropdown is disabled */
+  disabled: PropTypes.bool,
+  /** Whether to show error styling */
+  error: PropTypes.bool,
+  /** Additional CSS classes */
+  className: PropTypes.string,
+  /** Accessible label for the dropdown */
+  ariaLabel: PropTypes.string,
+  /** HTML id attribute */
+  id: PropTypes.string,
+};
+
+CustomDropdown.defaultProps = {
+  value: undefined,
+  placeholder: "Select an option",
+  darkMode: false,
+  disabled: false,
+  error: false,
+  className: "",
+  ariaLabel: undefined,
+  id: undefined,
 };
 
 export default CustomDropdown;

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { MapPin, Search, X } from "lucide-react";
+import PropTypes from "prop-types";
 import CustomDropdown from "./CustomDropdown";
 import ContinentItem from "./ContinentItem";
+import { parseJournalDate } from "../utils/dateUtils";
 
 /**
  * DestinationsModal Component
- * 
+ *
  * A modal that displays all trips grouped by continent with search and sort functionality.
- * 
+ *
  * @param {boolean} isOpen - Whether the modal is open
  * @param {Function} onClose - Handler to close the modal
  * @param {Array} allTrips - Array of all trip objects
@@ -49,9 +51,10 @@ const DestinationsModal = ({
     .sort((a, b) => {
       switch (sortOption) {
         case "date-desc":
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
+          // Use proper date parsing for consistent cross-browser behavior
+          return parseJournalDate(b.date).getTime() - parseJournalDate(a.date).getTime();
         case "date-asc":
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
+          return parseJournalDate(a.date).getTime() - parseJournalDate(b.date).getTime();
         case "rating-desc":
           return b.rating - a.rating;
         case "rating-asc":
@@ -78,30 +81,26 @@ const DestinationsModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-lg bg-black/60 transition-opacity duration-300 animate-opacityIn">
       <div
-        className={`${darkMode
-          ? "bg-gray-800/90 border-gray-700/80"
-          : "bg-white/95 border-gray-200/80"
-          } max-w-2xl w-full mx-auto rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 border-2 animate-scaleIn flex flex-col`}
+        className={`${
+          darkMode ? "bg-gray-800/90 border-gray-700/80" : "bg-white/95 border-gray-200/80"
+        } max-w-2xl w-full mx-auto rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 border-2 animate-scaleIn flex flex-col`}
         style={{ maxHeight: "calc(100vh - 4rem)" }}
       >
         {/* Header */}
         <div
-          className={`flex justify-between items-center p-5 border-b ${darkMode ? "border-gray-700" : "border-gray-200"
-            }`}
+          className={`flex justify-between items-center p-5 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
         >
-          <h2
-            className={`text-2xl font-bold font-playfair ${darkMode ? "text-gray-100" : "text-gray-800"
-              }`}
-          >
+          <h2 className={`text-2xl font-bold font-playfair ${darkMode ? "text-gray-100" : "text-gray-800"}`}>
             Explore Destinations
           </h2>
           <button
             onClick={onClose}
             aria-label="Close destinations modal"
-            className={`cursor-pointer p-2 rounded-full transition-all duration-300 ${darkMode
-              ? "hover:bg-gray-700/80 text-gray-300 hover:text-white"
-              : "hover:bg-gray-200/80 text-gray-600 hover:text-gray-900"
-              }`}
+            className={`cursor-pointer p-2 rounded-full transition-all duration-300 ${
+              darkMode
+                ? "hover:bg-gray-700/80 text-gray-300 hover:text-white"
+                : "hover:bg-gray-200/80 text-gray-600 hover:text-gray-900"
+            }`}
           >
             <X className="h-6 w-6" />
           </button>
@@ -117,10 +116,11 @@ const DestinationsModal = ({
               type="text"
               placeholder="Search destinations..."
               aria-label="Search destinations"
-              className={`w-full py-2.5 pl-10 pr-4 rounded-xl border-2 outline-none ${darkMode
-                ? "bg-gray-800/80 border-gray-600 text-white placeholder-gray-400 hover:border-sky-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40"
-                : "bg-white border-gray-200 text-gray-800 placeholder-gray-500 hover:border-sky-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
-                } shadow-sm transition-all duration-300 text-sm`}
+              className={`w-full py-2.5 pl-10 pr-4 rounded-xl border-2 outline-none ${
+                darkMode
+                  ? "bg-gray-800/80 border-gray-600 text-white placeholder-gray-400 hover:border-sky-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40"
+                  : "bg-white border-gray-200 text-gray-800 placeholder-gray-500 hover:border-sky-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              } shadow-sm transition-all duration-300 text-sm`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -167,33 +167,22 @@ const DestinationsModal = ({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div
-                className={`p-4 rounded-full mb-4 ${darkMode ? "bg-gray-700/50" : "bg-gray-100"}`}
-              >
-                <MapPin
-                  className={`h-12 w-12 ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-                />
+              <div className={`p-4 rounded-full mb-4 ${darkMode ? "bg-gray-700/50" : "bg-gray-100"}`}>
+                <MapPin className={`h-12 w-12 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />
               </div>
-              <p
-                className={`${darkMode ? "text-gray-200" : "text-gray-800"
-                  } text-xl font-semibold`}
-              >
+              <p className={`${darkMode ? "text-gray-200" : "text-gray-800"} text-xl font-semibold`}>
                 No Destinations Found
               </p>
-              <p
-                className={`${darkMode ? "text-gray-400" : "text-gray-500"
-                  } text-base mt-2`}
-              >
-                {searchQuery
-                  ? "Try adjusting your search or filter criteria."
-                  : "Add some trips to see them here!"}
+              <p className={`${darkMode ? "text-gray-400" : "text-gray-500"} text-base mt-2`}>
+                {searchQuery ? "Try adjusting your search or filter criteria." : "Add some trips to see them here!"}
               </p>
               {searchQuery && (
                 <button
-                  className={`cursor-pointer mt-6 px-5 py-2.5 rounded-xl font-medium transition-all duration-300 ${darkMode
-                    ? "bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white"
-                    : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white"
-                    } shadow-md hover:shadow-lg hover:scale-[1.02]`}
+                  className={`cursor-pointer mt-6 px-5 py-2.5 rounded-xl font-medium transition-all duration-300 ${
+                    darkMode
+                      ? "bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white"
+                      : "bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white"
+                  } shadow-md hover:shadow-lg hover:scale-[1.02]`}
                   onClick={() => setSearchQuery("")}
                 >
                   Clear Search
@@ -207,5 +196,37 @@ const DestinationsModal = ({
   );
 };
 
-export default DestinationsModal;
+DestinationsModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  allTrips: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      city: PropTypes.string.isRequired,
+      country: PropTypes.string.isRequired,
+      continent: PropTypes.string.isRequired,
+      date: PropTypes.string.isRequired,
+      rating: PropTypes.number.isRequired,
+      description: PropTypes.string.isRequired,
+      tags: PropTypes.arrayOf(PropTypes.string),
+    }),
+  ).isRequired,
+  currentTripId: PropTypes.number,
+  onSelectTrip: PropTypes.func.isRequired,
+  darkMode: PropTypes.bool,
+  continentColors: PropTypes.object,
+  countryFlags: PropTypes.object,
+  onEditTrip: PropTypes.func,
+  onDeleteTrip: PropTypes.func,
+};
 
+DestinationsModal.defaultProps = {
+  currentTripId: null,
+  darkMode: false,
+  continentColors: {},
+  countryFlags: {},
+  onEditTrip: () => {},
+  onDeleteTrip: () => {},
+};
+
+export default DestinationsModal;

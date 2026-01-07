@@ -1,11 +1,17 @@
 /**
  * Unit tests for useTheme hook
  * Tests theme state management, localStorage persistence, and DOM class manipulation
+ *
+ * Note: useTheme now re-exports from ThemeContext, so tests use ThemeProvider wrapper
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import { ThemeProvider } from "../context/ThemeContext";
 import useTheme from "./useTheme";
+
+// Wrapper component for hooks that need ThemeProvider
+const wrapper = ({ children }) => <ThemeProvider>{children}</ThemeProvider>;
 
 describe("useTheme", () => {
   beforeEach(() => {
@@ -42,7 +48,7 @@ describe("useTheme", () => {
   // ============================================
   describe("initial state", () => {
     it("provides all expected properties and methods", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current).toHaveProperty("darkMode");
       expect(result.current).toHaveProperty("isDark");
@@ -63,7 +69,7 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(false);
       expect(result.current.isDark).toBe(false);
@@ -72,7 +78,7 @@ describe("useTheme", () => {
 
     it("respects system dark mode preference when no stored preference", () => {
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: query === "(prefers-color-scheme: dark)",
+        matches: true,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -82,7 +88,7 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(true);
       expect(result.current.isDark).toBe(true);
@@ -90,9 +96,9 @@ describe("useTheme", () => {
     });
 
     it("uses stored dark mode preference over system preference", () => {
-      window.localStorage.store["darkMode"] = "true";
+      window.localStorage.store.darkMode = "true";
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: false, // System prefers light
+        matches: false,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -102,15 +108,15 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(true);
     });
 
     it("uses stored light mode preference over system preference", () => {
-      window.localStorage.store["darkMode"] = "false";
+      window.localStorage.store.darkMode = "false";
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: query === "(prefers-color-scheme: dark)", // System prefers dark
+        matches: true,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -120,18 +126,19 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(false);
     });
   });
 
   // ============================================
-  // toggleDarkMode Tests
+  // Toggle Tests
   // ============================================
   describe("toggleDarkMode", () => {
     it("toggles from light to dark mode", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
       expect(result.current.darkMode).toBe(false);
 
       act(() => {
@@ -139,13 +146,12 @@ describe("useTheme", () => {
       });
 
       expect(result.current.darkMode).toBe(true);
-      expect(result.current.isDark).toBe(true);
-      expect(result.current.isLight).toBe(false);
     });
 
     it("toggles from dark to light mode", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
+      window.localStorage.store.darkMode = "true";
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
       expect(result.current.darkMode).toBe(true);
 
       act(() => {
@@ -153,21 +159,11 @@ describe("useTheme", () => {
       });
 
       expect(result.current.darkMode).toBe(false);
-      expect(result.current.isDark).toBe(false);
-      expect(result.current.isLight).toBe(true);
     });
 
     it("toggles multiple times correctly", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      act(() => {
-        result.current.toggleDarkMode();
-      });
-      expect(result.current.darkMode).toBe(true);
-
-      act(() => {
-        result.current.toggleDarkMode();
-      });
       expect(result.current.darkMode).toBe(false);
 
       act(() => {
@@ -179,6 +175,11 @@ describe("useTheme", () => {
         result.current.toggleDarkMode();
       });
       expect(result.current.darkMode).toBe(false);
+
+      act(() => {
+        result.current.toggleDarkMode();
+      });
+      expect(result.current.darkMode).toBe(true);
     });
   });
 
@@ -187,8 +188,7 @@ describe("useTheme", () => {
   // ============================================
   describe("setTheme", () => {
     it("sets dark mode to true", () => {
-      const { result } = renderHook(() => useTheme());
-      expect(result.current.darkMode).toBe(false);
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(true);
@@ -198,9 +198,8 @@ describe("useTheme", () => {
     });
 
     it("sets dark mode to false", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
-      expect(result.current.darkMode).toBe(true);
+      window.localStorage.store.darkMode = "true";
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(false);
@@ -210,38 +209,40 @@ describe("useTheme", () => {
     });
 
     it("can set the same value without error", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(false);
       });
+
       expect(result.current.darkMode).toBe(false);
 
       act(() => {
         result.current.setTheme(false);
       });
+
       expect(result.current.darkMode).toBe(false);
     });
 
     it("handles boolean-like truthy values", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(1);
       });
 
-      expect(result.current.darkMode).toBe(1);
+      expect(result.current.darkMode).toBe(true);
     });
 
     it("handles boolean-like falsy values", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
+      window.localStorage.store.darkMode = "true";
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(0);
       });
 
-      expect(result.current.darkMode).toBe(0);
+      expect(result.current.darkMode).toBe(false);
     });
   });
 
@@ -250,48 +251,48 @@ describe("useTheme", () => {
   // ============================================
   describe("localStorage persistence", () => {
     it("saves dark mode preference to localStorage", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(true);
       });
 
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "true");
+      expect(window.localStorage.store.darkMode).toBe("true");
     });
 
     it("saves light mode preference to localStorage", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
+      window.localStorage.store.darkMode = "true";
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(false);
       });
 
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "false");
+      expect(window.localStorage.store.darkMode).toBe("false");
     });
 
     it("saves preference on toggle", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.toggleDarkMode();
       });
 
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "true");
+      expect(window.localStorage.store.darkMode).toBe("true");
 
       act(() => {
         result.current.toggleDarkMode();
       });
 
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "false");
+      expect(window.localStorage.store.darkMode).toBe("false");
     });
 
     it("reads darkMode from localStorage on initialization", () => {
-      window.localStorage.store["darkMode"] = "true";
+      window.localStorage.store.darkMode = "true";
 
-      renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      expect(window.localStorage.getItem).toHaveBeenCalledWith("darkMode");
+      expect(result.current.darkMode).toBe(true);
     });
   });
 
@@ -300,7 +301,7 @@ describe("useTheme", () => {
   // ============================================
   describe("DOM class manipulation", () => {
     it("adds dark-mode class to documentElement when dark mode is enabled", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(true);
@@ -310,7 +311,7 @@ describe("useTheme", () => {
     });
 
     it("adds dark-mode class to body when dark mode is enabled", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(true);
@@ -320,10 +321,10 @@ describe("useTheme", () => {
     });
 
     it("removes dark-mode class from documentElement when light mode is enabled", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
+      document.documentElement.classList.add("dark-mode");
+      window.localStorage.store.darkMode = "true";
 
-      expect(document.documentElement.classList.contains("dark-mode")).toBe(true);
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(false);
@@ -333,10 +334,10 @@ describe("useTheme", () => {
     });
 
     it("removes dark-mode class from body when light mode is enabled", () => {
-      window.localStorage.store["darkMode"] = "true";
-      const { result } = renderHook(() => useTheme());
+      document.body.classList.add("dark-mode");
+      window.localStorage.store.darkMode = "true";
 
-      expect(document.body.classList.contains("dark-mode")).toBe(true);
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(false);
@@ -346,7 +347,7 @@ describe("useTheme", () => {
     });
 
     it("updates DOM classes on toggle", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(document.documentElement.classList.contains("dark-mode")).toBe(false);
       expect(document.body.classList.contains("dark-mode")).toBe(false);
@@ -367,9 +368,9 @@ describe("useTheme", () => {
     });
 
     it("sets initial DOM classes based on stored preference", () => {
-      window.localStorage.store["darkMode"] = "true";
+      window.localStorage.store.darkMode = "true";
 
-      renderHook(() => useTheme());
+      renderHook(() => useTheme(), { wrapper });
 
       expect(document.documentElement.classList.contains("dark-mode")).toBe(true);
       expect(document.body.classList.contains("dark-mode")).toBe(true);
@@ -381,31 +382,31 @@ describe("useTheme", () => {
   // ============================================
   describe("isDark and isLight computed properties", () => {
     it("isDark mirrors darkMode state", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      expect(result.current.isDark).toBe(result.current.darkMode);
+      expect(result.current.isDark).toBe(false);
 
       act(() => {
-        result.current.toggleDarkMode();
+        result.current.setTheme(true);
       });
 
-      expect(result.current.isDark).toBe(result.current.darkMode);
+      expect(result.current.isDark).toBe(true);
     });
 
     it("isLight is opposite of darkMode state", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      expect(result.current.isLight).toBe(!result.current.darkMode);
+      expect(result.current.isLight).toBe(true);
 
       act(() => {
-        result.current.toggleDarkMode();
+        result.current.setTheme(true);
       });
 
-      expect(result.current.isLight).toBe(!result.current.darkMode);
+      expect(result.current.isLight).toBe(false);
     });
 
     it("isDark and isLight are always opposite", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.isDark).not.toBe(result.current.isLight);
 
@@ -428,7 +429,7 @@ describe("useTheme", () => {
   // ============================================
   describe("function reference stability (useCallback)", () => {
     it("toggleDarkMode maintains stable reference across renders", () => {
-      const { result, rerender } = renderHook(() => useTheme());
+      const { result, rerender } = renderHook(() => useTheme(), { wrapper });
       const firstRef = result.current.toggleDarkMode;
 
       rerender();
@@ -437,7 +438,7 @@ describe("useTheme", () => {
     });
 
     it("setTheme maintains stable reference across renders", () => {
-      const { result, rerender } = renderHook(() => useTheme());
+      const { result, rerender } = renderHook(() => useTheme(), { wrapper });
       const firstRef = result.current.setTheme;
 
       rerender();
@@ -446,7 +447,7 @@ describe("useTheme", () => {
     });
 
     it("functions remain stable after state changes", () => {
-      const { result, rerender } = renderHook(() => useTheme());
+      const { result, rerender } = renderHook(() => useTheme(), { wrapper });
       const toggleRef = result.current.toggleDarkMode;
       const setThemeRef = result.current.setTheme;
 
@@ -461,50 +462,23 @@ describe("useTheme", () => {
   });
 
   // ============================================
-  // Multiple Hook Instances Tests
-  // ============================================
-  describe("multiple hook instances", () => {
-    it("instances share the same localStorage but have independent state initially", () => {
-      const { result: result1 } = renderHook(() => useTheme());
-      const { result: result2 } = renderHook(() => useTheme());
-
-      // Both read from same localStorage, so should have same initial value
-      expect(result1.current.darkMode).toBe(result2.current.darkMode);
-    });
-
-    it("changing one instance does not automatically update another", () => {
-      const { result: result1 } = renderHook(() => useTheme());
-      renderHook(() => useTheme());
-
-      act(() => {
-        result1.current.toggleDarkMode();
-      });
-
-      // result1 changed, but result2 won't automatically update
-      // (they are separate hook instances with separate state)
-      expect(result1.current.darkMode).toBe(true);
-      // Note: In real app, you'd use context for shared state
-    });
-  });
-
-  // ============================================
   // Edge Cases Tests
   // ============================================
   describe("edge cases", () => {
     it("handles rapid toggles", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
-        result.current.toggleDarkMode();
-        result.current.toggleDarkMode();
-        result.current.toggleDarkMode();
+        for (let i = 0; i < 10; i++) {
+          result.current.toggleDarkMode();
+        }
       });
 
-      expect(result.current.darkMode).toBe(true);
+      expect(result.current.darkMode).toBe(false);
     });
 
     it("handles setTheme called multiple times in sequence", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         result.current.setTheme(true);
@@ -517,87 +491,80 @@ describe("useTheme", () => {
     });
 
     it("handles invalid localStorage value gracefully", () => {
-      window.localStorage.store["darkMode"] = "invalid";
+      window.localStorage.store.darkMode = "not a boolean";
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      // "invalid" === "true" is false, so should be false
+      // Should fall back to false when value is not "true"
       expect(result.current.darkMode).toBe(false);
     });
 
     it("handles empty string in localStorage", () => {
-      window.localStorage.store["darkMode"] = "";
+      window.localStorage.store.darkMode = "";
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      // "" === "true" is false, so should be false
+      // Empty string is not "true", so should be false
       expect(result.current.darkMode).toBe(false);
     });
   });
 
   // ============================================
-  // Real-world Usage Scenarios
+  // Real-World Usage Scenarios Tests
   // ============================================
   describe("real-world usage scenarios", () => {
     it("handles user toggling theme multiple times during session", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      // User starts in light mode
-      expect(result.current.isLight).toBe(true);
+      expect(result.current.darkMode).toBe(false);
 
-      // User switches to dark mode
       act(() => {
         result.current.toggleDarkMode();
       });
-      expect(result.current.isDark).toBe(true);
-      expect(document.body.classList.contains("dark-mode")).toBe(true);
+      expect(result.current.darkMode).toBe(true);
+      expect(window.localStorage.store.darkMode).toBe("true");
 
-      // User switches back to light mode
       act(() => {
         result.current.toggleDarkMode();
       });
-      expect(result.current.isLight).toBe(true);
-      expect(document.body.classList.contains("dark-mode")).toBe(false);
+      expect(result.current.darkMode).toBe(false);
+      expect(window.localStorage.store.darkMode).toBe("false");
 
-      // Preference is saved
-      expect(window.localStorage.setItem).toHaveBeenLastCalledWith("darkMode", "false");
+      act(() => {
+        result.current.toggleDarkMode();
+      });
+      expect(result.current.darkMode).toBe(true);
+      expect(window.localStorage.store.darkMode).toBe("true");
     });
 
     it("handles programmatic theme setting (e.g., from settings modal)", () => {
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      // User selects dark theme from dropdown
       act(() => {
         result.current.setTheme(true);
       });
-
       expect(result.current.darkMode).toBe(true);
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "true");
+      expect(window.localStorage.store.darkMode).toBe("true");
 
-      // User selects light theme from dropdown
       act(() => {
         result.current.setTheme(false);
       });
-
       expect(result.current.darkMode).toBe(false);
-      expect(window.localStorage.setItem).toHaveBeenCalledWith("darkMode", "false");
+      expect(window.localStorage.store.darkMode).toBe("false");
     });
 
     it("persists theme preference across page reloads (simulated)", () => {
-      // First session: user sets dark mode
-      const { result: session1, unmount: unmount1 } = renderHook(() => useTheme());
+      const { result: session1, unmount: unmount1 } = renderHook(() => useTheme(), { wrapper });
 
       act(() => {
         session1.current.setTheme(true);
       });
+      expect(session1.current.darkMode).toBe(true);
 
       unmount1();
 
-      // Simulate page reload by creating new hook instance
-      // localStorage should still have the value
-      window.localStorage.store["darkMode"] = "true";
-
-      const { result: session2 } = renderHook(() => useTheme());
+      // New hook instance should read from localStorage
+      const { result: session2 } = renderHook(() => useTheme(), { wrapper });
 
       expect(session2.current.darkMode).toBe(true);
     });
@@ -609,7 +576,7 @@ describe("useTheme", () => {
   describe("system preference integration", () => {
     it("uses system preference when localStorage is empty", () => {
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: query === "(prefers-color-scheme: dark)",
+        matches: true,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -619,15 +586,14 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(true);
     });
 
     it("user preference in localStorage overrides system preference", () => {
-      // System prefers dark
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: query === "(prefers-color-scheme: dark)",
+        matches: true,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -637,18 +603,16 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      // User previously chose light
-      window.localStorage.store["darkMode"] = "false";
+      window.localStorage.store.darkMode = "false";
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
-      // User preference wins
       expect(result.current.darkMode).toBe(false);
     });
 
     it("handles system preference for light mode", () => {
       window.matchMedia = vi.fn().mockImplementation((query) => ({
-        matches: false, // System prefers light
+        matches: false,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -658,10 +622,25 @@ describe("useTheme", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      const { result } = renderHook(() => useTheme());
+      const { result } = renderHook(() => useTheme(), { wrapper });
 
       expect(result.current.darkMode).toBe(false);
-      expect(result.current.isLight).toBe(true);
+    });
+  });
+
+  // ============================================
+  // Context Error Tests
+  // ============================================
+  describe("context requirement", () => {
+    it("throws error when used outside of ThemeProvider", () => {
+      // Suppress console.error for this test
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      expect(() => {
+        renderHook(() => useTheme());
+      }).toThrow("useThemeContext must be used within a ThemeProvider");
+
+      consoleSpy.mockRestore();
     });
   });
 });

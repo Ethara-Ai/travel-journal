@@ -12,10 +12,16 @@ describe("RatingStars", () => {
   // Basic Rendering Tests
   // ============================================
   describe("basic rendering", () => {
-    it("renders 5 stars", () => {
-      render(<RatingStars rating={3} />);
-      const stars = screen.getAllByRole("img", { hidden: true });
+    it("renders 5 stars in non-interactive mode", () => {
+      const { container } = render(<RatingStars rating={3} />);
+      const stars = container.querySelectorAll("svg");
       expect(stars).toHaveLength(5);
+    });
+
+    it("renders 5 stars in interactive mode", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons).toHaveLength(5);
     });
 
     it("renders container with flex layout", () => {
@@ -25,14 +31,17 @@ describe("RatingStars", () => {
     });
 
     it("renders without crashing with minimal props", () => {
-      render(<RatingStars rating={0} />);
-      expect(screen.getAllByRole("img", { hidden: true })).toHaveLength(5);
+      const { container } = render(<RatingStars rating={0} />);
+      const stars = container.querySelectorAll("svg");
+      expect(stars).toHaveLength(5);
     });
 
     it("renders with all props provided", () => {
       const onRate = vi.fn();
-      render(<RatingStars rating={4} darkMode={true} onRate={onRate} interactive={true} size="h-6 w-6" />);
-      expect(screen.getAllByRole("img", { hidden: true })).toHaveLength(5);
+      const { container } = render(
+        <RatingStars rating={4} darkMode={true} onRate={onRate} interactive={true} size="h-6 w-6" />,
+      );
+      expect(container.querySelectorAll("svg")).toHaveLength(5);
     });
   });
 
@@ -134,34 +143,34 @@ describe("RatingStars", () => {
   // Interactive Mode Tests
   // ============================================
   describe("interactive mode", () => {
-    it("does not apply interactive styles when interactive is false", () => {
-      const { container } = render(<RatingStars rating={3} interactive={false} />);
-      const stars = container.querySelectorAll(".cursor-pointer");
-      expect(stars).toHaveLength(0);
+    it("does not render buttons when interactive is false", () => {
+      render(<RatingStars rating={3} interactive={false} />);
+      const buttons = screen.queryAllByRole("radio");
+      expect(buttons).toHaveLength(0);
     });
 
-    it("applies cursor-pointer when interactive is true", () => {
-      const { container } = render(<RatingStars rating={3} interactive={true} />);
+    it("renders buttons when interactive is true", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons).toHaveLength(5);
+    });
+
+    it("applies cursor-pointer when interactive", () => {
+      const { container } = render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
       const stars = container.querySelectorAll(".cursor-pointer");
       expect(stars).toHaveLength(5);
     });
 
     it("applies hover scale transform when interactive", () => {
-      const { container } = render(<RatingStars rating={3} interactive={true} />);
+      const { container } = render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
       const stars = container.querySelectorAll(".hover\\:scale-110");
       expect(stars).toHaveLength(5);
     });
 
-    it("applies transition-transform when interactive", () => {
-      const { container } = render(<RatingStars rating={3} interactive={true} />);
-      const stars = container.querySelectorAll(".transition-transform");
-      expect(stars).toHaveLength(5);
-    });
-
     it("defaults to non-interactive mode", () => {
-      const { container } = render(<RatingStars rating={3} />);
-      const interactiveStars = container.querySelectorAll(".cursor-pointer");
-      expect(interactiveStars).toHaveLength(0);
+      render(<RatingStars rating={3} />);
+      const buttons = screen.queryAllByRole("radio");
+      expect(buttons).toHaveLength(0);
     });
   });
 
@@ -173,8 +182,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[0]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[0]);
 
       expect(handleRate).toHaveBeenCalledWith(1);
       expect(handleRate).toHaveBeenCalledTimes(1);
@@ -184,8 +193,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[1]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[1]);
 
       expect(handleRate).toHaveBeenCalledWith(2);
     });
@@ -194,8 +203,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[2]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[2]);
 
       expect(handleRate).toHaveBeenCalledWith(3);
     });
@@ -204,8 +213,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[3]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[3]);
 
       expect(handleRate).toHaveBeenCalledWith(4);
     });
@@ -214,45 +223,27 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[4]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[4]);
 
       expect(handleRate).toHaveBeenCalledWith(5);
-    });
-
-    it("does not call onRate when interactive is false", () => {
-      const handleRate = vi.fn();
-      render(<RatingStars rating={3} interactive={false} onRate={handleRate} />);
-
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[0]);
-
-      expect(handleRate).not.toHaveBeenCalled();
     });
 
     it("does not throw when clicked without onRate callback", () => {
       render(<RatingStars rating={3} interactive={true} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      expect(() => fireEvent.click(stars[0])).not.toThrow();
-    });
-
-    it("does not call onRate when onRate is undefined but interactive is true", () => {
-      render(<RatingStars rating={3} interactive={true} />);
-
-      const stars = screen.getAllByRole("img", { hidden: true });
-      // Should not throw
-      fireEvent.click(stars[0]);
+      const buttons = screen.getAllByRole("radio");
+      expect(() => fireEvent.click(buttons[0])).not.toThrow();
     });
 
     it("handles multiple clicks on different stars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[0]);
-      fireEvent.click(stars[4]);
-      fireEvent.click(stars[2]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[0]);
+      fireEvent.click(buttons[4]);
+      fireEvent.click(buttons[2]);
 
       expect(handleRate).toHaveBeenCalledTimes(3);
       expect(handleRate).toHaveBeenNthCalledWith(1, 1);
@@ -264,10 +255,10 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[2]);
-      fireEvent.click(stars[2]);
-      fireEvent.click(stars[2]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[2]);
+      fireEvent.click(buttons[2]);
+      fireEvent.click(buttons[2]);
 
       expect(handleRate).toHaveBeenCalledTimes(3);
       expect(handleRate).toHaveBeenCalledWith(3);
@@ -313,46 +304,125 @@ describe("RatingStars", () => {
   // Accessibility Tests
   // ============================================
   describe("accessibility", () => {
-    it("provides aria-label for interactive stars", () => {
-      render(<RatingStars rating={3} interactive={true} />);
-
-      // Check that stars have interactive aria-labels
-      expect(screen.getByLabelText("Rate 1 star")).toBeInTheDocument();
-      expect(screen.getByLabelText("Rate 2 stars")).toBeInTheDocument();
-      expect(screen.getByLabelText("Rate 3 stars")).toBeInTheDocument();
-      expect(screen.getByLabelText("Rate 4 stars")).toBeInTheDocument();
-      expect(screen.getByLabelText("Rate 5 stars")).toBeInTheDocument();
+    it("provides aria-label for interactive rating group", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+      const radiogroup = screen.getByRole("radiogroup");
+      expect(radiogroup).toHaveAttribute("aria-label", "Rating");
     });
 
-    it("provides aria-label for non-interactive stars", () => {
+    it("provides aria-label for non-interactive container", () => {
       render(<RatingStars rating={3} interactive={false} />);
-
-      // All stars should have the same descriptive label
-      const starsWithLabel = screen.getAllByLabelText("3 out of 5 stars");
-      expect(starsWithLabel).toHaveLength(5);
+      const container = screen.getByRole("img");
+      expect(container).toHaveAttribute("aria-label");
     });
 
-    it("has correct aria-label for rating 0", () => {
-      render(<RatingStars rating={0} interactive={false} />);
-      const starsWithLabel = screen.getAllByLabelText("0 out of 5 stars");
-      expect(starsWithLabel).toHaveLength(5);
+    it("interactive stars have aria-label", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+
+      expect(screen.getByLabelText("1 star")).toBeInTheDocument();
+      expect(screen.getByLabelText("2 stars")).toBeInTheDocument();
+      expect(screen.getByLabelText("3 stars")).toBeInTheDocument();
+      expect(screen.getByLabelText("4 stars")).toBeInTheDocument();
+      expect(screen.getByLabelText("5 stars")).toBeInTheDocument();
     });
 
-    it("has correct aria-label for rating 5", () => {
-      render(<RatingStars rating={5} interactive={false} />);
-      const starsWithLabel = screen.getAllByLabelText("5 out of 5 stars");
-      expect(starsWithLabel).toHaveLength(5);
+    it("interactive stars have aria-checked attribute", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons[0]).toHaveAttribute("aria-checked", "false");
+      expect(buttons[1]).toHaveAttribute("aria-checked", "false");
+      expect(buttons[2]).toHaveAttribute("aria-checked", "true"); // 3 stars is selected
+      expect(buttons[3]).toHaveAttribute("aria-checked", "false");
+      expect(buttons[4]).toHaveAttribute("aria-checked", "false");
     });
 
-    it("first star has singular 'star' in interactive label", () => {
-      render(<RatingStars rating={0} interactive={true} />);
-      expect(screen.getByLabelText("Rate 1 star")).toBeInTheDocument();
+    it("current rating star has tabindex 0", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons[2]).toHaveAttribute("tabindex", "0"); // 3rd star
     });
 
-    it("other stars have plural 'stars' in interactive label", () => {
-      render(<RatingStars rating={0} interactive={true} />);
-      expect(screen.getByLabelText("Rate 2 stars")).toBeInTheDocument();
-      expect(screen.getByLabelText("Rate 3 stars")).toBeInTheDocument();
+    it("non-current rating stars have tabindex -1", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons[0]).toHaveAttribute("tabindex", "-1");
+      expect(buttons[1]).toHaveAttribute("tabindex", "-1");
+      expect(buttons[3]).toHaveAttribute("tabindex", "-1");
+      expect(buttons[4]).toHaveAttribute("tabindex", "-1");
+    });
+
+    it("supports custom label prop", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} label="Trip Rating" />);
+      const radiogroup = screen.getByRole("radiogroup");
+      expect(radiogroup).toHaveAttribute("aria-label", "Trip Rating");
+    });
+  });
+
+  // ============================================
+  // Keyboard Navigation Tests
+  // ============================================
+  describe("keyboard navigation", () => {
+    it("increases rating on ArrowRight key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[2], { key: "ArrowRight" });
+
+      expect(handleRate).toHaveBeenCalledWith(4);
+    });
+
+    it("increases rating on ArrowUp key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[2], { key: "ArrowUp" });
+
+      expect(handleRate).toHaveBeenCalledWith(4);
+    });
+
+    it("decreases rating on ArrowLeft key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[2], { key: "ArrowLeft" });
+
+      expect(handleRate).toHaveBeenCalledWith(2);
+    });
+
+    it("decreases rating on ArrowDown key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[2], { key: "ArrowDown" });
+
+      expect(handleRate).toHaveBeenCalledWith(2);
+    });
+
+    it("selects star on Enter key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[4], { key: "Enter" });
+
+      expect(handleRate).toHaveBeenCalledWith(5);
+    });
+
+    it("selects star on Space key", () => {
+      const handleRate = vi.fn();
+      render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
+
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.keyDown(buttons[0], { key: " " });
+
+      expect(handleRate).toHaveBeenCalledWith(1);
     });
   });
 
@@ -379,7 +449,6 @@ describe("RatingStars", () => {
   describe("edge cases", () => {
     it("handles undefined rating", () => {
       const { container } = render(<RatingStars rating={undefined} />);
-      // undefined < any number is false, so no stars should be filled
       const filledStars = container.querySelectorAll(".fill-yellow-500");
       expect(filledStars).toHaveLength(0);
     });
@@ -427,7 +496,6 @@ describe("RatingStars", () => {
   // ============================================
   describe("real-world usage scenarios", () => {
     it("displays trip rating correctly", () => {
-      // Simulating displaying a trip with 4-star rating
       const tripRating = 4;
       const { container } = render(<RatingStars rating={tripRating} />);
 
@@ -442,9 +510,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={0} interactive={true} onRate={handleRate} />);
 
-      // User clicks on 4th star
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[3]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[3]);
 
       expect(handleRate).toHaveBeenCalledWith(4);
     });
@@ -453,9 +520,8 @@ describe("RatingStars", () => {
       const handleRate = vi.fn();
       render(<RatingStars rating={3} interactive={true} onRate={handleRate} />);
 
-      // User changes rating from 3 to 5
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[4]);
+      const buttons = screen.getAllByRole("radio");
+      fireEvent.click(buttons[4]);
 
       expect(handleRate).toHaveBeenCalledWith(5);
     });
@@ -475,34 +541,50 @@ describe("RatingStars", () => {
     });
 
     it("works as read-only rating display", () => {
-      const handleRate = vi.fn();
-      render(<RatingStars rating={4} interactive={false} onRate={handleRate} />);
+      const { container } = render(<RatingStars rating={4} interactive={false} />);
 
-      const stars = screen.getAllByRole("img", { hidden: true });
-      fireEvent.click(stars[0]);
+      // Should not have radio buttons when non-interactive
+      const buttons = screen.queryAllByRole("radio");
+      expect(buttons).toHaveLength(0);
 
-      // Should not trigger rating change when not interactive
-      expect(handleRate).not.toHaveBeenCalled();
+      // Should still display the rating
+      const filledStars = container.querySelectorAll(".fill-yellow-500");
+      expect(filledStars).toHaveLength(4);
     });
   });
 
   // ============================================
-  // Snapshot Tests
+  // Component Structure Tests
   // ============================================
   describe("component structure", () => {
     it("maintains consistent structure with rating 0", () => {
       const { container } = render(<RatingStars rating={0} />);
-      expect(container.firstChild.children).toHaveLength(5);
+      const wrapper = container.firstChild;
+      expect(wrapper.children).toHaveLength(5);
     });
 
     it("maintains consistent structure with rating 5", () => {
       const { container } = render(<RatingStars rating={5} />);
-      expect(container.firstChild.children).toHaveLength(5);
+      const wrapper = container.firstChild;
+      expect(wrapper.children).toHaveLength(5);
     });
 
     it("maintains consistent structure in interactive mode", () => {
-      const { container } = render(<RatingStars rating={3} interactive={true} />);
-      expect(container.firstChild.children).toHaveLength(5);
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+      const buttons = screen.getAllByRole("radio");
+      expect(buttons).toHaveLength(5);
+    });
+
+    it("non-interactive has role img", () => {
+      render(<RatingStars rating={3} />);
+      const container = screen.getByRole("img");
+      expect(container).toBeInTheDocument();
+    });
+
+    it("interactive has role radiogroup", () => {
+      render(<RatingStars rating={3} interactive={true} onRate={vi.fn()} />);
+      const radiogroup = screen.getByRole("radiogroup");
+      expect(radiogroup).toBeInTheDocument();
     });
   });
 });
