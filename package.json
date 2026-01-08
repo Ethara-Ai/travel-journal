@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/Ethara-AI/travel-journal-react/issues"
   },
-  "homepage": "https://github.com/Ethara-AI/travel-journal-react#readme",
+  "homepage": "https://components.ethara.ai/travel-journal",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
