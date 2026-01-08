@@ -69,7 +69,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Explicitly set dark mode
   const setTheme = useCallback((isDark) => {
-    setDarkMode(isDark);
+    setDarkMode(Boolean(isDark));
   }, []);
 
   const value = {
@@ -80,11 +80,7 @@ export const ThemeProvider = ({ children }) => {
     isLight: !darkMode,
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export default ThemeContext;

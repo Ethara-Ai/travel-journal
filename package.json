@@ -1,6 +1,6 @@
 {
   "name": "travel-journal-react",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A beautiful, modern travel journal application built with React and Tailwind CSS. Track your adventures, rate destinations, and create a visual diary of your travels.",
   "type": "module",
   "author": "Travel Journal Team",
