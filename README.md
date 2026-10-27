@@ -5,7 +5,6 @@ A beautiful, modern travel journal application built with React and Tailwind CSS
 ![Travel Journal Preview](https://img.shields.io/badge/React-18.3-61DAFB?style=flat&logo=react)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css)
 ![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=flat&logo=vite)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=flat&logo=github-actions)
 ![AWS S3](https://img.shields.io/badge/Deploy-AWS_S3-FF9900?style=flat&logo=amazon-s3)
 
@@ -111,7 +110,6 @@ travel-journal-react/
 ├── vite.config.js          # Vite configuration
 ├── postcss.config.js       # PostCSS configuration
 ├── eslint.config.js        # ESLint configuration
-├── LICENSE                 # MIT License
 ├── CONTRIBUTING.md         # Contribution guidelines
 └── README.md               # This file
 ```
@@ -236,10 +234,6 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ##  Acknowledgments
 
