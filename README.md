@@ -259,3 +259,9 @@ If you have any questions or need help, please:
 <p align="center">
   Made with for travelers everywhere
 </p>
+
+---
+
+## Copyright
+
+Copyright (c) 2026 Green Rider Technology LLP (Ethara AI). All rights reserved.
